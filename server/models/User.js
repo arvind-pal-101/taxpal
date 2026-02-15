@@ -23,9 +23,18 @@ const userSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    currency:{
-        type: String,
-        required: true,
+    currency: {
+      type: String,
+      required: true,
+    },
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordExpires: {
+      type: Date,
+    },
+    refreshToken: {
+      type: String,
     },
   },
   { timestamps: true }

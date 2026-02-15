@@ -1,212 +1,120 @@
-//import { Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-//import FeatureCard from "../components/FeatureCard";
-//import SectionTitle from "../components/SectionTitle";
 
 const Landing = () => {
   return (
-    <div className="bg-gray-50">
+    <div className="bg-white min-h-screen">
       <Navbar />
 
       {/* HERO */}
-     <section className="relative bg-gradient-to-b from-white to-blue-50">
-  <div className="max-w-7xl mx-auto px-4 py-28 text-center">
+      <section className="bg-gradient-to-br from-white to-purple-50 pt-20 pb-20">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+            Manage your finances<br />without the stress
+          </h1>
+          <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
+            Track income, manage expenses, and understand your taxes. Built for freelancers who actually want clarity.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              to="/register"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+            >
+              Get Started
+            </Link>
+            <a
+              href="#features"
+              className="border-2 border-purple-600 text-purple-600 hover:bg-purple-50 px-8 py-3 rounded-lg font-semibold transition-colors"
+            >
+              Learn More
+            </a>
+          </div>
+        </div>
+      </section>
 
-    {/* Headline */}
-    <h1 className="text-4xl md:text-6xl font-bold text-gray-900 leading-tight">
-      Manage Income, Track Expenses &
-      <span className="text-blue-600"> Estimate Taxes</span> — All in One Place
-    </h1>
-
-    {/* Subtext */}
-    <p className="mt-6 text-lg text-gray-600 max-w-2xl mx-auto">
-      A secure financial dashboard built for freelancers and professionals
-      who need clarity, control and confidence over their finances.
-    </p>
-
-    {/* CTA */}
-    <div className="mt-10">
-      <a
-        href="#features"
-        className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-lg shadow-md transition duration-200"
-      >
-        Explore Features
-      </a>
-    </div>
-
-  </div>
-</section>
-
-
-      {/* WHY TAXPAL */}
       {/* FEATURES */}
-<section id="features" className="bg-white">
-  <div className="max-w-6xl mx-auto px-6 py-24">
+      <section id="features" className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-16">
+            What you get
+          </h2>
 
-    {/* Section Title */}
-    <div className="text-center mb-16">
-      <h2 className="text-3xl md:text-4xl font-semibold text-gray-900">
-        Built for Financial Clarity
-      </h2>
-      <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-        TaxPal centralizes income tracking, budgeting and tax estimation
-        into one structured and secure platform.
-      </p>
-    </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="p-8 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="text-3xl mb-4">📊</div>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Track Everything</h3>
+              <p className="text-gray-600">Log income and expenses. See where your money actually goes.</p>
+            </div>
 
-    {/* Feature Grid */}
-    <div className="grid md:grid-cols-3 gap-10">
+            <div className="p-8 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="text-3xl mb-4">💰</div>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Budget Better</h3>
+              <p className="text-gray-600">Set spending limits that work. Stay in control of your money.</p>
+            </div>
 
-      {/* Feature 1 */}
-      <div className="border border-gray-100 rounded-xl p-8 hover:shadow-sm transition">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          Income & Expense Tracking
-        </h3>
-        <p className="text-gray-600 text-sm leading-relaxed">
-          Log transactions, categorize expenses and monitor
-          your financial flow in real time.
-        </p>
-      </div>
-
-      {/* Feature 2 */}
-      <div className="border border-gray-100 rounded-xl p-8 hover:shadow-sm transition">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          Smart Budget Management
-        </h3>
-        <p className="text-gray-600 text-sm leading-relaxed">
-          Set monthly spending limits and track performance
-          with clear financial insights.
-        </p>
-      </div>
-
-      {/* Feature 3 */}
-      <div className="border border-gray-100 rounded-xl p-8 hover:shadow-sm transition">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          Automated Tax Estimation
-        </h3>
-        <p className="text-gray-600 text-sm leading-relaxed">
-          Instantly calculate quarterly tax estimates based
-          on your income and expense data.
-        </p>
-      </div>
-
-    </div>
-
-  </div>
-</section>
-{/* HOW IT WORKS */}
-<section id="how-it-works" className="bg-gray-50">
-  <div className="max-w-6xl mx-auto px-6 py-24">
-
-    {/* Section Title */}
-    <div className="text-center mb-16">
-      <h2 className="text-3xl md:text-4xl font-semibold text-gray-900">
-        How It Works
-      </h2>
-      <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-        A simple four-step process designed for freelancers and professionals.
-      </p>
-    </div>
-
-    {/* Steps Grid */}
-    <div className="grid md:grid-cols-4 gap-10 text-center">
-
-      {/* Step 1 */}
-      <div>
-        <div className="w-10 h-10 mx-auto mb-4 flex items-center justify-center rounded-full bg-blue-600 text-white font-semibold">
-          1
+            <div className="p-8 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="text-3xl mb-4">🧮</div>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Taxes Made Simple</h3>
+              <p className="text-gray-600">Get accurate quarterly estimates. No surprises on tax day.</p>
+            </div>
+          </div>
         </div>
-        <h3 className="font-semibold text-gray-900 mb-2">
-          Create Account
-        </h3>
-        <p className="text-sm text-gray-600">
-          Sign up securely and access your personal dashboard.
-        </p>
-      </div>
+      </section>
 
-      {/* Step 2 */}
-      <div>
-        <div className="w-10 h-10 mx-auto mb-4 flex items-center justify-center rounded-full bg-blue-600 text-white font-semibold">
-          2
+      {/* HOW IT WORKS */}
+      <section id="how-it-works" className="py-20 bg-purple-50">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-16">
+            How it works
+          </h2>
+
+          <div className="grid md:grid-cols-4 gap-6">
+            {[
+              { num: 1, title: "Sign Up", desc: "Create your account" },
+              { num: 2, title: "Log Transactions", desc: "Add your income and expenses" },
+              { num: 3, title: "Track Progress", desc: "Watch your finances improve" },
+              { num: 4, title: "Get Estimates", desc: "Know your tax liability" }
+            ].map((step) => (
+              <div key={step.num} className="text-center">
+                <div className="w-12 h-12 mx-auto mb-4 flex items-center justify-center rounded-full bg-purple-600 text-white font-bold text-lg">
+                  {step.num}
+                </div>
+                <h3 className="font-bold text-gray-900 mb-2">{step.title}</h3>
+                <p className="text-gray-600 text-sm">{step.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
-        <h3 className="font-semibold text-gray-900 mb-2">
-          Log Transactions
-        </h3>
-        <p className="text-sm text-gray-600">
-          Add income and expenses with proper categorization.
-        </p>
-      </div>
+      </section>
 
-      {/* Step 3 */}
-      <div>
-        <div className="w-10 h-10 mx-auto mb-4 flex items-center justify-center rounded-full bg-blue-600 text-white font-semibold">
-          3
+      {/* TRUST */}
+      <section className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+                Your data is safe
+              </h2>
+              <p className="text-gray-600 text-lg mb-6">
+                We use industry-standard encryption to protect your financial information. Your data never gets shared with anyone.
+              </p>
+              <ul className="space-y-3">
+                <li className="text-gray-700">✓ Encrypted connections</li>
+                <li className="text-gray-700">✓ Secure authentication</li>
+                <li className="text-gray-700">✓ No third-party sharing</li>
+              </ul>
+            </div>
+            <div className="bg-gray-100 rounded-lg p-12 text-center">
+              <div className="text-6xl mb-4">🔒</div>
+              <p className="text-gray-700 font-semibold">
+                Built with security in mind
+              </p>
+            </div>
+          </div>
         </div>
-        <h3 className="font-semibold text-gray-900 mb-2">
-          Track Budget
-        </h3>
-        <p className="text-sm text-gray-600">
-          Monitor spending trends and stay within limits.
-        </p>
-      </div>
+      </section>
 
-      {/* Step 4 */}
-      <div>
-        <div className="w-10 h-10 mx-auto mb-4 flex items-center justify-center rounded-full bg-blue-600 text-white font-semibold">
-          4
-        </div>
-        <h3 className="font-semibold text-gray-900 mb-2">
-          Estimate Taxes
-        </h3>
-        <p className="text-sm text-gray-600">
-          Instantly generate quarterly tax estimates.
-        </p>
-      </div>
-
-    </div>
-
-  </div>
-</section>
-{/* SECURITY */}
-<section id="security" className="bg-white">
-  <div className="max-w-6xl mx-auto px-6 py-24">
-
-    <div className="grid md:grid-cols-2 gap-16 items-center">
-
-      {/* Left Content */}
-      <div>
-        <h2 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-6">
-          Security & Privacy First
-        </h2>
-
-        <p className="text-gray-600 mb-8">
-          TaxPal is built with security at its core. Your financial data
-          remains protected through encrypted sessions and secure authentication systems.
-        </p>
-
-        <ul className="space-y-4 text-gray-700 text-sm">
-          <li>✔ Secure JWT-based Authentication</li>
-          <li>✔ Encrypted Data Handling</li>
-          <li>✔ Protected User Sessions</li>
-          <li>✔ Privacy-Focused Architecture</li>
-        </ul>
-      </div>
-
-      {/* Right Visual Block */}
-      <div className="bg-gray-50 rounded-2xl p-12 text-center border border-gray-100">
-        <div className="text-5xl font-bold text-blue-600 mb-4">
-          🔒
-        </div>
-        <p className="text-gray-700 font-medium">
-          Your financial data stays private and secure.
-        </p>
-      </div>
-
-    </div>
-
-  </div>
-</section>
       <Footer />
     </div>
   );

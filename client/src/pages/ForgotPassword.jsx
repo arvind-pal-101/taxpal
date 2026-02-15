@@ -3,73 +3,107 @@ import { Link } from "react-router-dom";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
     if (!email) {
-      alert("Please enter your email");
+      setError("Please enter your email");
+      setLoading(false);
       return;
     }
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/auth/forgot-password",
+        `${import.meta.env.VITE_API_URL}/api/auth/forgot-password`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            newPassword: "12345678",
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, newPassword: "12345678" }),
         }
       );
 
       const data = await response.json();
-      alert(data.message);
 
+      if (!response.ok) {
+        setError(data.message || "Something went wrong");
+        setLoading(false);
+        return;
+      }
+
+      setSubmitted(true);
     } catch (error) {
-      console.log(error);
-      alert("Something went wrong");
+      setError("Something went wrong");
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-xl shadow-md w-full max-w-md"
-      >
-        <h2 className="text-2xl font-semibold text-center mb-6">
-          Reset Your Password
-        </h2>
+    <div className="min-h-screen bg-gradient-to-br from-white to-purple-50 flex items-center justify-center px-6">
+      <div className="w-full max-w-md">
+        <div className="bg-white p-8 rounded-lg border border-gray-200 shadow-sm">
+          {submitted ? (
+            <>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Check your email</h2>
+              <p className="text-gray-600 mb-6">
+                We've sent password reset instructions to <span className="font-semibold text-gray-900">{email}</span>
+              </p>
+              <Link
+                to="/login"
+                className="block w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-lg text-center transition-colors"
+              >
+                Back to Login
+              </Link>
+            </>
+          ) : (
+            <>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Reset Password</h2>
+              <p className="text-gray-600 mb-8">Enter your email to receive reset instructions</p>
 
-        <div className="mb-4">
-          <label className="text-sm text-gray-600">Email *</label>
-          <input
-            type="email"
-            className="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
-            placeholder="Enter your registered email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit}>
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none"
+                    placeholder="you@example.com"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-semibold py-2 rounded-lg transition-colors mt-6"
+                >
+                  {loading ? "Sending..." : "Send Reset Link"}
+                </button>
+              </form>
+
+              <p className="text-center text-gray-600 text-sm mt-6">
+                Remember your password?{" "}
+                <Link to="/login" className="text-purple-600 hover:text-purple-700 font-semibold">
+                  Login
+                </Link>
+              </p>
+            </>
+          )}
         </div>
-
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
-        >
-          Email Reset Link
-        </button>
-
-        <p className="text-center text-sm mt-4">
-          <Link to="/login" className="text-blue-600 hover:underline">
-            Back to Login
-          </Link>
-        </p>
-      </form>
+      </div>
     </div>
   );
 };
