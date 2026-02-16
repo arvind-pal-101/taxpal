@@ -58,38 +58,23 @@ const Landing = () => {
     {/* Feature Grid */}
     <div className="grid md:grid-cols-3 gap-10">
 
-      {/* Feature 1 */}
-      <div className="border border-gray-100 rounded-xl p-8 hover:shadow-sm transition">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          Income & Expense Tracking
-        </h3>
-        <p className="text-gray-600 text-sm leading-relaxed">
-          Log transactions, categorize expenses and monitor
-          your financial flow in real time.
-        </p>
-      </div>
+     <FeatureCard
+  icon="💰"
+  title="Income & Expense Tracking"
+  desc="Log transactions, categorize expenses and monitor your financial flow in real time."
+/>
 
-      {/* Feature 2 */}
-      <div className="border border-gray-100 rounded-xl p-8 hover:shadow-sm transition">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          Smart Budget Management
-        </h3>
-        <p className="text-gray-600 text-sm leading-relaxed">
-          Set monthly spending limits and track performance
-          with clear financial insights.
-        </p>
-      </div>
+<FeatureCard
+  icon="📊"
+  title="Smart Budget Management"
+  desc="Set monthly spending limits and track performance with clear financial insights."
+/>
 
-      {/* Feature 3 */}
-      <div className="border border-gray-100 rounded-xl p-8 hover:shadow-sm transition">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          Automated Tax Estimation
-        </h3>
-        <p className="text-gray-600 text-sm leading-relaxed">
-          Instantly calculate quarterly tax estimates based
-          on your income and expense data.
-        </p>
-      </div>
+<FeatureCard
+  icon="🧾"
+  title="Automated Tax Estimation"
+  desc="Instantly calculate quarterly tax estimates based on your income and expense data."
+/>
 
     </div>
 
