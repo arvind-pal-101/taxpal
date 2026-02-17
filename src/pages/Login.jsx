@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
+
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -39,14 +43,29 @@ const Login = () => {
 
         <div className="mb-4">
           <label className="text-sm text-gray-600">Password *</label>
-          <input
-            type="password"
-            className="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+
+            <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+             className="w-full mt-1 p-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+             placeholder="Enter your password"
+             value={password}
+             onChange={(e) => setPassword(e.target.value)}
+            />
+
+            {/* Eye Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition"
+            >
+              {showPassword ? (<EyeOff size={18} />) : (<Eye size={18} />)}
+            </button>
+
+            </div>
+
         </div>
+
 
         <div className="text-right mb-4">
           <Link

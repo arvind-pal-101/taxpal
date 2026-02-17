@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import FeatureCard from "../components/FeatureCard";
@@ -45,15 +44,11 @@ const Landing = () => {
   <div className="max-w-6xl mx-auto px-6 py-24">
 
     {/* Section Title */}
-    <div className="text-center mb-16">
-      <h2 className="text-3xl md:text-4xl font-semibold text-gray-900">
-        Built for Financial Clarity
-      </h2>
-      <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-        TaxPal centralizes income tracking, budgeting and tax estimation
-        into one structured and secure platform.
-      </p>
-    </div>
+    <SectionTitle
+  title="Built for Financial Clarity"
+  subtitle="TaxPal centralizes income tracking, budgeting and tax estimation into one structured and secure platform."
+/>
+
 
     {/* Feature Grid */}
     <div className="grid md:grid-cols-3 gap-10">
@@ -85,14 +80,11 @@ const Landing = () => {
   <div className="max-w-6xl mx-auto px-6 py-24">
 
     {/* Section Title */}
-    <div className="text-center mb-16">
-      <h2 className="text-3xl md:text-4xl font-semibold text-gray-900">
-        How It Works
-      </h2>
-      <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-        A simple four-step process designed for freelancers and professionals.
-      </p>
-    </div>
+   <SectionTitle
+  title="How It Works"
+  subtitle="A simple four-step process designed for freelancers and professionals."
+/>
+
 
     {/* Steps Grid */}
     <div className="grid md:grid-cols-4 gap-10 text-center">
