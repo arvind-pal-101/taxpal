@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import {Eye,EyeOff} from "lucide-react";
 
 const Register = () => {
   const navigate = useNavigate();
+  const [showPassword,setShowPassword] = useState(false);
   const currencyMap = { india: "₹", usa: "$", uk: "£" };
 
   const [formData, setFormData] = useState({
@@ -122,11 +124,38 @@ const Register = () => {
             </div>
 
             {/* Password */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Password <span className="text-red-500">*</span></label>
-              <input type="password" name="password" value={formData.password} onChange={handleChange} className={getInputClass("password")} placeholder="••••••••" />
-              {errors.password && <p className="text-xs text-red-600 mt-1.5 font-medium ml-1">⚠️ {errors.password}</p>}
-            </div>
+<div>
+  <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">
+    Password <span className="text-red-500">*</span>
+  </label>
+
+  <div className="relative">
+    <input
+      type={showPassword ? "text" : "password"}
+      name="password"
+      value={formData.password}
+      onChange={handleChange}
+      className={`${getInputClass("password")} pr-12`}
+      placeholder="••••••••"
+    />
+
+    {/* Eye Toggle */}
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition"
+    >
+      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+    </button>
+  </div>
+
+  {errors.password && (
+    <p className="text-xs text-red-600 mt-1.5 font-medium ml-1">
+      ⚠️ {errors.password}
+    </p>
+  )}
+</div>
+
 
            {/* Dual Column - Responsive adjustment */}
 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

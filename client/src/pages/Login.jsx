@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import {Eye,EyeOff} from "lucide-react";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword,setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -77,19 +79,39 @@ const Login = () => {
             </div>
 
             <div>
-              <div className="flex justify-between mb-2 ml-1">
-                <label className="text-sm font-bold text-gray-700">Password <span className="text-red-500">*</span></label>
-                <Link to="/forgot-password" name="password" className="text-xs font-bold text-emerald-600 hover:text-emerald-700">Forgot?</Link>
-              </div>
-              <input
-                type="password"
-                name="password"
-                required
-                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all duration-300"
-                placeholder="••••••••"
-                onChange={handleChange}
-              />
-            </div>
+  <div className="flex justify-between mb-2 ml-1">
+    <label className="text-sm font-bold text-gray-700">
+      Password <span className="text-red-500">*</span>
+    </label>
+    <Link
+      to="/forgot-password"
+      className="text-xs font-bold text-emerald-600 hover:text-emerald-700"
+    >
+      Forgot?
+    </Link>
+  </div>
+
+  <div className="relative">
+    <input
+      type={showPassword ? "text" : "password"}
+      name="password"
+      required
+      className="w-full px-5 py-4 pr-12 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all duration-300"
+      placeholder="••••••••"
+      onChange={handleChange}
+    />
+
+    {/* Eye Toggle */}
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition"
+    >
+      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+    </button>
+  </div>
+</div>
+
 
             <button
               type="submit"
