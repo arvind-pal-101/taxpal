@@ -68,7 +68,7 @@ const AllTransactionsModal = ({ isOpen, onClose, transactions }) => {
                 key={f}
                 onClick={() => setActiveFilter(f)}
                 className={`flex-1 py-2 sm:py-2.5 rounded-xl text-[9px] sm:text-[10px] font-black tracking-widest uppercase transition-all
-                  ${activeFilter === f ? 'bg-gray-950 text-white shadow-lg' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                  ${activeFilter === f ? 'bg-gray-800 text-white shadow-lg' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
               >
                 {f}
               </button>
@@ -81,41 +81,51 @@ const AllTransactionsModal = ({ isOpen, onClose, transactions }) => {
           <div className="space-y-3">
             {filteredData.length > 0 ? (
               filteredData.map(t => {
-                const details = getCategoryDetails(t.category, t.type);
-                return (
-                  <div key={t.id} className="relative flex justify-between items-center p-3.5 sm:p-4 pl-5 sm:pl-6 rounded-[1.5rem] sm:rounded-[2rem] border border-gray-50 bg-white hover:shadow-xl hover:shadow-gray-500/5 transition-all group overflow-hidden">
-                    
-                    {/* Side Indicator */}
-                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${t.type === 'income' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+  const details = getCategoryDetails(t.category, t.type);
+  return (
+    <div 
+      key={t.id} 
+      className="relative flex justify-between items-center p-4 pl-6 rounded-[2rem] border border-transparent bg-white hover:bg-white hover:shadow-[0_20px_50px_rgba(0,0,0,0.06)] transition-all duration-500 group cursor-default hover:-translate-y-1 active:scale-[0.98] overflow-hidden"
+    >
+      
+      {/* Side Indicator: Smooth transition on hover */}
+      <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all duration-500 group-hover:w-1.5 ${t.type === 'income' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
 
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      {/* Icon: Slightly smaller on mobile */}
-                      <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center text-base sm:text-lg shadow-sm group-hover:scale-105 transition-transform ${details.bg}`}>
-                        {details.icon}
-                      </div>
-                      
-                      <div className="max-w-[120px] sm:max-w-none overflow-hidden">
-                        <p className="text-xs sm:text-sm font-black text-gray-900 leading-tight group-hover:text-emerald-900 transition-colors truncate sm:whitespace-normal">{t.desc}</p>
-                        <div className="flex items-center gap-2">
-                           <span className={`text-[8px] sm:text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md ${details.bg} ${details.text}`}>
-                             {t.category}
-                           </span>
-                           <span className="text-[9px] sm:text-[10px] text-gray-300 font-bold uppercase tracking-tighter">{t.date}</span>
-                        </div>
-                      </div>
-                    </div>
+      <div className="flex items-center gap-4">
+        {/* Icon: Pop & Rotate effect like Recent Activity */}
+        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg shadow-sm transition-all duration-700 group-hover:rotate-[12deg] group-hover:scale-110 ${details.bg}`}>
+          {details.icon}
+        </div>
+        
+        <div className="max-w-[150px] sm:max-w-none">
+          {/* Desc: Color change to emerald on hover */}
+          <p className="text-sm font-black text-gray-900 leading-tight group-hover:text-emerald-600 transition-colors duration-500 truncate sm:whitespace-normal">
+            {t.desc}
+          </p>
+          <div className="flex items-center gap-2">
+             <span className={`text-[8px] sm:text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md transition-all duration-500 ${details.bg} ${details.text}`}>
+               {t.category}
+             </span>
+             <span className="text-[9px] sm:text-[10px] text-gray-300 group-hover:text-gray-500 font-bold uppercase tracking-tighter transition-colors duration-500">
+               {t.date}
+             </span>
+          </div>
+        </div>
+      </div>
 
-                    {/* Amount Section */}
-                    <div className="text-right">
-                      <div className={`flex items-center justify-end gap-0.5 sm:gap-1 font-black text-sm sm:text-base tracking-tighter ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-500'}`}>
-                        <span className="text-[10px] sm:text-xs">{t.type === 'income' ? '↑' : '↓'}</span>
-                        <span>{formatCurrency(t.amount)}</span>
-                      </div>
-                      <p className="text-[8px] sm:text-[9px] text-gray-300 font-bold uppercase tracking-widest">Verified</p>
-                    </div>
-                  </div>
-                );
-              })
+      {/* Amount Section: Scaling up on hover */}
+      <div className="text-right">
+        <div className={`flex items-center justify-end gap-1 font-black text-sm sm:text-base tracking-tighter transition-all duration-500 group-hover:scale-110 origin-right ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-500'}`}>
+          <span>{t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}</span>
+        </div>
+        {/* Verified/Success text: Turns Green/Emerald on hover */}
+        <p className="text-[8px] sm:text-[9px] text-gray-300 group-hover:text-emerald-500 font-bold uppercase tracking-widest transition-colors duration-500">
+          Verified
+        </p>
+      </div>
+    </div>
+  );
+})
             ) : (
               <div className="text-center py-16 sm:py-20 opacity-30">
                  <span className="text-3xl sm:text-4xl block mb-2">📁</span>
