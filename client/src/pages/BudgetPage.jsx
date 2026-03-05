@@ -25,26 +25,38 @@ const SpendingChart = ({ budgetData }) => {
   return (
     <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 md:p-8">
       <h3 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">Spending Breakdown</h3>
-      <h2 className="text-xl font-black text-slate-900 tracking-tight mb-6">Where your money goes</h2>
+      <h2 className="text-xl font-black text-slate-900 tracking-tight mb-4">Budget vs Spent</h2>
+      <p className="text-[10px] text-slate-400 font-bold mb-6">Progress bar shows % of budget limit used</p>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         {budgetData.filter(b => b.spent > 0).sort((a,b) => b.spent - a.spent).map((b, i) => {
-          const pct = total > 0 ? (b.spent / total) * 100 : 0;
-          const color = COLORS[i % COLORS.length];
+          const pctOfLimit = b.limit > 0 ? Math.min((b.spent / b.limit) * 100, 100) : 0;
+          const pctOfTotal = total > 0 ? (b.spent / total) * 100 : 0;
+          const color = b.pct >= 100 ? '#ef4444' : b.pct >= 80 ? '#f97316' : COLORS[i % COLORS.length];
           return (
             <div key={b.id} className="flex items-center gap-3">
               <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-[12px] font-black text-slate-700 uppercase tracking-wide truncate">{b.name}</span>
-                  <span className="text-[12px] font-black text-slate-900 ml-2 shrink-0">{formatCurrency(b.spent)}</span>
+                  <div className="text-right ml-2 shrink-0">
+                    <span className="text-[12px] font-black text-slate-900">{formatCurrency(b.spent)}</span>
+                    <span className="text-[9px] text-slate-400 font-bold ml-1">/ {formatCurrency(b.limit)}</span>
+                  </div>
                 </div>
                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                   <div className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${pct}%`, background: color }} />
+                    style={{ width: `${pctOfLimit}%`, background: color }} />
+                </div>
+                <div className="flex justify-between mt-1.5">
+                  <span className="text-[9px] text-slate-400 font-bold">
+                    {pctOfTotal.toFixed(0)}% of total spending
+                  </span>
+                  <span className={`text-[9px] font-black ${b.pct >= 100 ? 'text-rose-500' : b.pct >= 80 ? 'text-orange-500' : 'text-slate-400'}`}>
+                    {pctOfLimit.toFixed(0)}% of limit used
+                  </span>
                 </div>
               </div>
-              <span className="text-[10px] font-black text-slate-400 w-10 text-right shrink-0">{pct.toFixed(0)}%</span>
             </div>
           );
         })}
@@ -72,18 +84,25 @@ const BudgetModal = ({ budgets, onSave, onClose }) => {
         : b
     ));
 
-  const isValid = tempBudgets.every(b => b.name.trim() && b.limit > 0);
+  // Duplicate name check — case insensitive
+  const hasDuplicate = tempBudgets.some((b, _, arr) => {
+    const name = b.name.trim().toLowerCase();
+    return name && arr.filter(x => x.name.trim().toLowerCase() === name).length > 1;
+  });
+
+  const isValid = tempBudgets.every(b => b.name.trim() && b.limit > 0) && !hasDuplicate;
 
   const handleSave = async () => {
     if (!isValid) return;
     try {
       const token = localStorage.getItem("token");
-      await axios.post('/api/budgets/sync', { budgets: tempBudgets }, {
+      const response = await axios.post('/api/budgets/sync', { budgets: tempBudgets }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      onSave(tempBudgets);
+      // Use API response — it has createdAt from MongoDB
+      onSave(response.data);
       onClose();
-    } catch { alert("Sync failed!"); }
+    } catch { onClose(); }
   };
 
   return createPortal(
@@ -122,8 +141,8 @@ const BudgetModal = ({ budgets, onSave, onClose }) => {
                     onClick={() => {
                       if (alreadyAdded) return;
                       setTempBudgets(prev => [
+                        { id: `temp-${Date.now()}-${cat.label}`, name: cat.label, limit: 0 },
                         ...prev,
-                        { id: `temp-${Date.now()}-${cat.label}`, name: cat.label, limit: 0 }
                       ]);
                     }}
                     disabled={alreadyAdded}
@@ -163,15 +182,23 @@ const BudgetModal = ({ budgets, onSave, onClose }) => {
                         ${nameInvalid ? 'border-rose-200 focus:border-rose-500' : 'border-slate-100 focus:border-emerald-500'}`}
                     />
                     {nameInvalid && <span className="text-[9px] font-bold text-rose-500 mt-1">⚠ Category name is required</span>}
+                    {!nameInvalid && tempBudgets.filter(x => x.name.trim().toLowerCase() === cat.name.trim().toLowerCase()).length > 1 && (
+                      <span className="text-[9px] font-bold text-rose-500 mt-1">⚠ Duplicate category — already exists</span>
+                    )}
                   </div>
                   {/* Limit */}
                   <div className="flex-1 flex flex-col">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 md:text-right">Budget Limit</label>
                     <input
-                      type="number" value={cat.limit === 0 ? "" : cat.limit}
-                      onChange={e => updateCategory(id, 'limit', e.target.value)}
-                      placeholder="0.00"
-                      className={`w-full p-3.5 bg-slate-50 rounded-2xl border font-black md:text-right text-slate-900 outline-none transition-all focus:bg-white
+                      type="text" inputMode="numeric"
+                      value={cat.limit === 0 ? "" : cat.limit}
+                      onClick={(e) => e.target.select()}
+                      onChange={e => {
+                        const val = e.target.value.replace(/[^0-9]/g, '');
+                        updateCategory(id, 'limit', val === '' ? 0 : Number(val));
+                      }}
+                      placeholder="e.g. 5000"
+                      className={`w-full p-3.5 bg-slate-50 rounded-2xl border font-black text-slate-900 outline-none transition-all focus:bg-white
                         ${limitInvalid ? 'border-rose-200 focus:border-rose-500' : 'border-slate-100 focus:border-emerald-500'}`}
                     />
                     {limitInvalid && <span className="text-[9px] font-bold text-rose-500 mt-1">⚠ Enter a valid limit</span>}
@@ -304,6 +331,11 @@ const BudgetPage = ({ transactions = [], budgets = [], setBudgets }) => {
                         <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider mt-1 inline-block ${b.badge}`}>
                           {b.label}
                         </span>
+                        {b.createdAt && (
+                          <p className="text-[9px] text-slate-400 font-bold mt-1">
+                            Created {new Date(b.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </p>
+                        )}
                       </div>
                       <div className="text-right">
                         <div className="text-[16px] font-black text-slate-900">{formatCurrency(b.spent)}</div>

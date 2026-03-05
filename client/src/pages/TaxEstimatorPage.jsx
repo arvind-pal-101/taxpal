@@ -299,7 +299,7 @@ const TaxEstimatorPage = ({ transactions = [] }) => {
             ].map(t => (
               <button key={t.id} onClick={() => setActiveTab(t.id)}
                 className={[
-                  'flex-1 sm:flex-none px-[18px] py-[7px] rounded-[8px] border-none cursor-pointer text-[11px] font-bold tracking-[.04em] transition-all whitespace-nowrap',
+                  'flex-1 px-2 sm:px-[18px] py-[7px] rounded-[8px] border-none cursor-pointer text-[10px] sm:text-[11px] font-bold tracking-[.04em] transition-all text-center',
                   activeTab === t.id
                     ? 'bg-slate-900 text-white'
                     : 'bg-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-100',

@@ -167,7 +167,7 @@ const Dashboard = ({ transactions = [], budgets = [], onSaveTransaction }) => {
 
               {/* Left — Charts + Recent */}
               <div className="lg:col-span-8 space-y-8">
-                <div className="bg-white rounded-[2.5rem] border border-gray-50 shadow-sm overflow-hidden h-[350px] md:h-[450px]">
+                <div className="bg-white rounded-[2.5rem] border border-gray-50 shadow-sm overflow-hidden h-[420px] md:h-[500px]">
                   <Charts transactions={transactions} />
                 </div>
 

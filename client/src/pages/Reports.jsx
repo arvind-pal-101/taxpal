@@ -125,30 +125,53 @@ function DonutChart({ slices }) {
   const total = slices.reduce((s,x) => s + x.value, 0);
   if (!total) return <EmptyChart />;
   const R=78, cx=100, cy=95;
-  let angle = -Math.PI/2;
-  const paths = slices.map((s,i) => {
-    const sweep = (s.value/total) * 2 * Math.PI;
-    const [x1,y1] = [cx + R*Math.cos(angle), cy + R*Math.sin(angle)];
-    angle += sweep;
-    const [x2,y2] = [cx + R*Math.cos(angle), cy + R*Math.sin(angle)];
-    return { d:`M${cx},${cy} L${x1},${y1} A${R},${R} 0 ${sweep>Math.PI?1:0},1 ${x2},${y2} Z`, color:CAT_COLORS[i%CAT_COLORS.length], pct:((s.value/total)*100).toFixed(1), label:s.label };
+
+  // Build paths — special case: single slice = full circle (SVG arc can't draw 360°)
+  const paths = slices.map((s, i) => {
+    const pct = ((s.value / total) * 100).toFixed(1);
+    const color = CAT_COLORS[i % CAT_COLORS.length];
+    return { pct, label: s.label, color, value: s.value };
   });
+
+  const renderArcs = () => {
+    if (slices.length === 1) {
+      // Full circle — two semicircles to avoid SVG arc bug
+      return (
+        <>
+          <path d={`M${cx},${cy-R} A${R},${R} 0 0,1 ${cx},${cy+R} Z`} fill={paths[0].color} opacity="0.93"/>
+          <path d={`M${cx},${cy+R} A${R},${R} 0 0,1 ${cx},${cy-R} Z`} fill={paths[0].color} opacity="0.93"/>
+        </>
+      );
+    }
+    let angle = -Math.PI/2;
+    return paths.map((p, i) => {
+      const sweep = (slices[i].value / total) * 2 * Math.PI;
+      const x1 = cx + R * Math.cos(angle);
+      const y1 = cy + R * Math.sin(angle);
+      angle += sweep;
+      const x2 = cx + R * Math.cos(angle);
+      const y2 = cy + R * Math.sin(angle);
+      return <path key={i} d={`M${cx},${cy} L${x1},${y1} A${R},${R} 0 ${sweep>Math.PI?1:0},1 ${x2},${y2} Z`}
+        fill={p.color} stroke="#fff" strokeWidth="2.5" opacity="0.93"/>;
+    });
+  };
+
   return (
-    <div className="flex items-center gap-5 w-full">
-      <svg width="200" height="190" viewBox="0 0 200 190" className="flex-shrink-0">
-        {paths.map((p,i) => <path key={i} d={p.d} fill={p.color} stroke="#fff" strokeWidth="2.5" opacity="0.93"/>)}
-        <circle cx={cx} cy={cy} r={R*0.44} fill="white"/>
-        <text x={cx} y={cy+5} textAnchor="middle" fontSize="12" fontWeight="900" fill="#111827">
-          {slices.length}
-        </text>
-        <text x={cx} y={cy+17} textAnchor="middle" fontSize="8" fill="#9ca3af">items</text>
-      </svg>
-      <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+    <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
+      <div className="w-[150px] sm:w-[170px] flex-shrink-0">
+        <svg viewBox="0 0 200 190" className="w-full h-auto">
+          {renderArcs()}
+          <circle cx={cx} cy={cy} r={R*0.44} fill="white"/>
+          <text x={cx} y={cy+5} textAnchor="middle" fontSize="12" fontWeight="900" fill="#111827">{slices.length}</text>
+          <text x={cx} y={cy+17} textAnchor="middle" fontSize="8" fill="#9ca3af">items</text>
+        </svg>
+      </div>
+      <div className="flex flex-col gap-2 flex-1 min-w-0 w-full sm:w-auto">
         {paths.map((p,i) => (
           <div key={i} className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{background:p.color}}/>
-            <span className="text-[11px] font-bold text-gray-500 flex-1 truncate">{p.label}</span>
-            <span className="text-[11px] font-black text-gray-900">{p.pct}%</span>
+            <span className="text-[11px] font-bold text-gray-500 flex-1 min-w-0 break-words">{p.label}</span>
+            <span className="text-[11px] font-black text-gray-900 flex-shrink-0">{p.pct}%</span>
           </div>
         ))}
       </div>
@@ -484,18 +507,18 @@ const Reports = ({ transactions: propTxns = [], budgets: propBudgets = [] }) => 
               TAB: INCOME
           ════════════════════════════════════════ */}
           {activeTab === 'income' && (<>
-            <div className="flex gap-8 px-1">
-              <div>
+            <div className="grid grid-cols-3 gap-3 px-1">
+              <div className="min-w-0">
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Income</p>
-                <p className="text-2xl font-black text-emerald-600 tracking-tighter">+{formatCurrency(totInc)}</p>
+                <p className="text-lg sm:text-2xl font-black text-emerald-600 tracking-tighter truncate">+{formatCurrency(totInc)}</p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Transactions</p>
-                <p className="text-2xl font-black text-gray-900">{income.length}</p>
+                <p className="text-lg sm:text-2xl font-black text-gray-900">{income.length}</p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Avg per Txn</p>
-                <p className="text-2xl font-black text-gray-900">{formatCurrency(income.length ? totInc/income.length : 0)}</p>
+                <p className="text-lg sm:text-2xl font-black text-gray-900 truncate">{formatCurrency(income.length ? totInc/income.length : 0)}</p>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -515,18 +538,18 @@ const Reports = ({ transactions: propTxns = [], budgets: propBudgets = [] }) => 
               TAB: EXPENSE
           ════════════════════════════════════════ */}
           {activeTab === 'expense' && (<>
-            <div className="flex gap-8 px-1">
-              <div>
+            <div className="grid grid-cols-3 gap-3 px-1">
+              <div className="min-w-0">
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Expenses</p>
-                <p className="text-2xl font-black text-rose-500 tracking-tighter">−{formatCurrency(totExp)}</p>
+                <p className="text-lg sm:text-2xl font-black text-rose-500 tracking-tighter truncate">−{formatCurrency(totExp)}</p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Transactions</p>
-                <p className="text-2xl font-black text-gray-900">{expense.length}</p>
+                <p className="text-lg sm:text-2xl font-black text-gray-900">{expense.length}</p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Avg per Txn</p>
-                <p className="text-2xl font-black text-gray-900">{formatCurrency(expense.length ? totExp/expense.length : 0)}</p>
+                <p className="text-lg sm:text-2xl font-black text-gray-900 truncate">{formatCurrency(expense.length ? totExp/expense.length : 0)}</p>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

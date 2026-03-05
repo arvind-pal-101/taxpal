@@ -157,7 +157,7 @@ const TransactionsPage = ({ transactions = [], onDelete, onSaveTransaction, budg
             <div className="flex p-1 bg-slate-100 rounded-xl w-full lg:w-auto gap-0.5">
               {FILTERS.map(f => (
                 <button key={f.id} onClick={() => setActiveFilter(f.id)}
-                  className={`flex items-center gap-1.5 flex-1 lg:flex-none px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-200
+                  className={`flex items-center gap-1.5 flex-1 px-3 sm:px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-200
                     ${activeFilter === f.id ? f.active : `${f.inactive} ${f.hover}`}`}>
                   {f.id === 'income'  && <ArrowUp />}
                   {f.id === 'expense' && <ArrowDown />}
