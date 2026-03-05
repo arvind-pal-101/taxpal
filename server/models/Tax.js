@@ -1,17 +1,24 @@
+// models/Tax.js
 const mongoose = require('mongoose');
 
-const TaxSchema = new mongoose.Schema({
-  user: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true 
+const taxSchema = new mongoose.Schema({
+  user: {
+    type:     mongoose.Schema.Types.ObjectId,
+    ref:      'User',
+    required: true,
+    unique:   true,   // one record per user — upserted on every save
   },
-  region: { type: String, required: true },
-  regime: { type: String, required: true },
-  totalIncome: { type: Number, required: true },
-  taxableIncome: { type: Number, required: true },
-  taxDue: { type: Number, required: true },
-  year: { type: String, default: "2025-26" }
-}, { timestamps: true });
+  country:        { type: String, default: 'india' },
+  regime:         { type: String, enum: ['new', 'old'],                   default: 'new'      },
+  mode:           { type: String, enum: ['salaried', 'business'],         default: 'salaried' },
+  grossIncome:    { type: Number, default: 0 },
+  taxableIncome:  { type: Number, default: 0 },
+  totalTax:       { type: Number, default: 0 },
+  tdsAlreadyPaid: { type: Number, default: 0 },
+  remainingTax:   { type: Number, default: 0 },
+  refund:         { type: Number, default: 0 },
+  effectiveRate:  { type: String, default: '0.00' },
+  savedAt:        { type: Date,   default: Date.now },
+});
 
-module.exports = mongoose.model('Tax', TaxSchema);
+module.exports = mongoose.model('Tax', taxSchema);

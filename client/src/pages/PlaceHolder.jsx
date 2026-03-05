@@ -1,3 +1,4 @@
+{/*
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -52,4 +53,4 @@ const Placeholder = ({ title, icon }) => {
   );
 };
 
-export default Placeholder;
+export default Placeholder; */}

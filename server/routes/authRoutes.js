@@ -8,10 +8,11 @@ const {
     refreshToken,
     logout,
 } = require('../controllers/authController');
+const protect = require('../middleware/authMiddleware');
+const User    = require('../models/User');
 
 const router = express.Router();
 
-// Validation Middleware
 const validate = (checks) => async (req, res, next) => {
     await Promise.all(checks.map((c) => c.run(req)));
     const errors = validationResult(req);
@@ -19,9 +20,8 @@ const validate = (checks) => async (req, res, next) => {
     next();
 };
 
-// Register Route
-router.post(
-    '/register',
+// ── Register ────────────────────────────────────────────────
+router.post('/register',
     validate([
         body('name').notEmpty().withMessage('Name is required'),
         body('email').isEmail().withMessage('Invalid email'),
@@ -32,36 +32,60 @@ router.post(
     registerUser
 );
 
-// Login Route
-router.post(
-    '/login',
+// ── Login ───────────────────────────────────────────────────
+router.post('/login',
     validate([
-        body('email').isEmail().withMessage('Invalid email'), 
+        body('email').isEmail().withMessage('Invalid email'),
         body('password').notEmpty().withMessage('Password is required')
     ]),
     loginUser
 );
 
-//  Forgot Password (Sends OTP)
-router.post(
-    '/forgot-password', 
-    validate([body('email').isEmail().withMessage('Valid email is required')]), 
+// ── Forgot Password ─────────────────────────────────────────
+router.post('/forgot-password',
+    validate([body('email').isEmail().withMessage('Valid email is required')]),
     forgotPassword
 );
 
-// Verify OTP and reset password using frontend data
-router.post(
-    '/verify-otp', 
+// ── Verify OTP & Reset Password ─────────────────────────────
+router.post('/verify-otp',
     validate([
         body('email').isEmail(),
         body('otp').notEmpty().withMessage('OTP is required'),
-        body('newPassword').isLength({ min: 6 }).withMessage('New password must be 6+ characters')
-    ]), 
+        body('newPassword').isLength({ min: 6 }).withMessage('Min 6 characters')
+    ]),
     verifyOTPAndResetPassword
 );
 
-// 5. Refresh & Logout (Requirement for JWT)
-router.post('/refresh', validate([body('refreshToken').notEmpty()]), refreshToken);
-router.post('/logout', validate([body('refreshToken').notEmpty()]), logout);
+// ── Update Profile (name only) ──────────────────────────────
+router.put('/update-profile', protect,
+    validate([body('name').notEmpty().withMessage('Name is required')]),
+    async (req, res) => {
+        try {
+            const { name } = req.body;
+            const user = await User.findByIdAndUpdate(
+                req.user.id,
+                { name: name.trim() },
+                { new: true }
+            );
+            if (!user) return res.status(404).json({ message: "User not found" });
+            res.json({ message: "Profile updated", name: user.name });
+        } catch (err) {
+            res.status(500).json({ message: "Server error" });
+        }
+    }
+);
+
+// ── Refresh Token ───────────────────────────────────────────
+router.post('/refresh',
+    validate([body('refreshToken').notEmpty()]),
+    refreshToken
+);
+
+// ── Logout ──────────────────────────────────────────────────
+router.post('/logout',
+    validate([body('refreshToken').notEmpty()]),
+    logout
+);
 
 module.exports = router;

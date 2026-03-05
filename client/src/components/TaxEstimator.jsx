@@ -1,183 +1,187 @@
-import React, { useState, useMemo } from "react";
-import axios from "axios";
-import { calculateTaxByRegion } from "../utils/taxCalculations";
-import { formatCurrency } from "../utils/financeHelpers";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { formatCurrency } from '../utils/financeHelpers';
+import { QUARTERS } from '../utils/taxCalculations';
 
-const TaxEstimator = ({ transactions = [], loading }) => {
-  const [region, setRegion] = useState("India");
-  const [regime, setRegime] = useState("new");
-  const [manualDeductions, setManualDeductions] = useState(0);
+const fmt = (n) => formatCurrency(Math.round(n || 0));
 
-  const taxData = useMemo(() => {
-    const stats = (transactions || []).reduce((acc, curr) => {
-      if (curr.type === 'income') acc.income += curr.amount;
-      if (curr.type === 'expense') acc.expense += curr.amount;
-      return acc;
-    }, { income: 0, expense: 0 });
+/* ── Helper: which quarter is next due ── */
+const getNextQuarter = (totalTax) => {
+  const now    = new Date();
+  const month  = now.getMonth(); // 0=Jan ... 11=Dec
+  // Financial year: Apr(3)–Mar(2)
+  // Q1 due June(5), Q2 Sept(8), Q3 Dec(11), Q4 Mar(2)
+  let qIdx = 3; // default Q4
+  if (month >= 3 && month < 5)  qIdx = 0; // Apr–May → Q1 upcoming
+  else if (month >= 5 && month < 8)  qIdx = 1; // Jun–Aug → Q2 upcoming
+  else if (month >= 8 && month < 11) qIdx = 2; // Sep–Nov → Q3 upcoming
+  else qIdx = 3;                               // Dec–Mar → Q4 upcoming
 
-    const incomeHeads = { salary: stats.income };
-    const totalDeductions = stats.expense + manualDeductions;
+  const q        = QUARTERS[qIdx];
+  const cumDue   = Math.round(totalTax * q.pct);
+  const prevPct  = qIdx > 0 ? QUARTERS[qIdx - 1].pct : 0;
+  const instalment = Math.round(totalTax * (q.pct - prevPct));
 
-    const result = calculateTaxByRegion(incomeHeads, region, regime, totalDeductions);
-    
-    const quarterlyDeadlines = result.totalTax > 10000 ? [
-      { date: "June 15", pct: "15%", amount: result.totalTax * 0.15 },
-      { date: "Sept 15", pct: "45%", amount: result.totalTax * 0.45 },
-      { date: "Dec 15", pct: "75%", amount: result.totalTax * 0.75 },
-      { date: "Mar 15", pct: "100%", amount: result.totalTax * 1.00 },
-    ] : [];
+  return { qIdx, label: q.label, due: q.due, full: q.full, cumDue, instalment, pct: q.pct };
+};
 
-    return {
-      totalIncome: stats.income, 
-      taxableIncome: result.taxableIncome,
-      taxDue: result.totalTax,
-      netSavings: stats.income - result.totalTax,
-      effectiveRate: result.taxableIncome > 0 ? ((result.totalTax / result.taxableIncome) * 100).toFixed(3) : 0,
-      monthly: result.monthlyTax,
-      deadlines: quarterlyDeadlines
-    };
-  }, [transactions, region, regime, manualDeductions]);
+/* ── Mini stat card ── */
+const StatCard = ({ label, value, color, bg }) => (
+  <div className="rounded-[11px] border border-slate-100 p-[11px_13px]" style={{ background: bg || '#f8fafc' }}>
+    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-[.12em] mb-[5px]">{label}</div>
+    <div className="text-[15px] font-extrabold truncate tracking-[-0.02em]" style={{ color: color || '#0f172a' }}>{value}</div>
+  </div>
+);
 
-  const saveTaxToDB = async () => {
-    try {
-      const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-      const token = userInfo?.token || localStorage.getItem("token");
+/* ══════════ MAIN ══════════ */
+const TaxEstimator = ({ isDashboard = true }) => {
+  const navigate = useNavigate();
+  const [tax,     setTax]     = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(false);
 
-      if (!token) return alert("Please login first to save tax data");
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) { setLoading(false); return; }
 
-      const response = await axios.post('/api/taxes/save', {
-        region,
-        regime,
-        totalIncome: taxData.totalIncome,
-        taxableIncome: taxData.taxableIncome,
-        taxDue: taxData.taxDue
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+    axios.get('http://localhost:5000/api/taxes/latest', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => { setTax(res.data); setLoading(false); })
+      .catch(() => { setError(true); setLoading(false); });
+  }, []);
 
-      if (response.status === 200 || response.status === 201) {
-        alert("Tax Calculation Saved Successfully! ✅");
-      }
-    } catch (err) {
-      console.error("Save failed:", err.response?.data || err.message);
-      alert("Error saving tax calculation. Check backend routes.");
-    }
-  };
+  /* ── Loading ── */
+  if (loading) return (
+    <div className="bg-white rounded-[16px] border border-slate-100 shadow-sm p-5 flex flex-col gap-3 animate-pulse">
+      <div className="h-4 bg-slate-100 rounded w-1/3" />
+      <div className="h-16 bg-slate-50 rounded-xl" />
+      <div className="h-10 bg-slate-50 rounded-xl" />
+    </div>
+  );
 
-  if (loading) return <div className="h-48 bg-gray-50 animate-pulse rounded-[2rem]" />;
+  /* ── No data saved yet ── */
+  if (!tax || error) return (
+    <div className="bg-white rounded-[16px] border border-slate-100 shadow-sm p-5 flex flex-col items-center gap-3 text-center">
+      <div className="text-[36px]">🧮</div>
+      <div className="text-[12px] font-bold text-slate-700">No Tax Calculation Saved</div>
+      <div className="text-[10px] text-slate-400 font-semibold">Go to Tax Estimator, fill your details and save.</div>
+      <button
+        onClick={() => navigate('/tax-estimator')}
+        className="mt-1 px-4 py-2 bg-slate-900 text-white rounded-xl text-[11px] font-bold border-none cursor-pointer hover:bg-emerald-600 transition-all">
+        Open Tax Estimator →
+      </button>
+    </div>
+  );
+
+  /* ── Data exists ── */
+  const isOld       = tax.regime === 'old';
+  const rc          = isOld ? '#6366f1' : '#10b981';
+  const rLight      = isOld ? '#eef2ff' : '#ecfdf5';
+  const rBorder     = isOld ? '#c7d2fe' : '#d1fae5';
+  const rDark       = isOld ? '#4f46e5' : '#059669';
+  const nextQ       = getNextQuarter(tax.totalTax);
+  const paidPct     = tax.totalTax > 0 ? Math.min(100, Math.round(((tax.tdsAlreadyPaid || 0) / tax.totalTax) * 100)) : 100;
+  const savedDate   = tax.savedAt ? new Date(tax.savedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
 
   return (
-    <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-4">
-      {/* 1. Header & Region Selector */}
-      <div className="flex justify-between items-center">
-        <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">Tax View</h4>
-        <select 
-          className="text-[10px] font-black bg-gray-50 border-none rounded-lg px-2 py-1 outline-none cursor-pointer"
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
-        >
-          <option value="India">🇮🇳 India</option>
-          <option value="USA">🇺🇸 USA</option>
-          <option value="UK">🇬🇧 UK</option>
-          <option value="Canada">🇨🇦 Canada</option>
-        </select>
-      </div>
+    <div className="bg-white rounded-[16px] border border-slate-100 shadow-sm flex flex-col gap-3 overflow-hidden">
 
-      {/* 2. Regime Toggle */}
-      {region === "India" && (
-        <div className="flex bg-gray-100 p-1 rounded-xl">
-          <button 
-            onClick={() => setRegime("new")}
-            className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${
-              regime === "new" ? "bg-white text-emerald-600 shadow-sm" : "text-gray-400"
-            }`}
-          >
-            New Regime
-          </button>
-          <button 
-            onClick={() => setRegime("old")}
-            className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${
-              regime === "old" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-400"
-            }`}
-          >
-            Old Regime
-          </button>
-        </div>
-      )}
-
-      {/* Manual Deduction Input */}
-      {regime === "old" && region === "India" && (
-        <div className="animate-in fade-in slide-in-from-top-1">
-          <label className="text-[9px] font-black text-gray-400 uppercase ml-1">Investment/Deductions (80C, 80D)</label>
-          <input 
-            type="number"
-            className="w-full mt-1 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-indigo-300"
-            placeholder="e.g. 150000"
-            onChange={(e) => setManualDeductions(Number(e.target.value))}
-          />
-        </div>
-      )}
-
-      {/* 3. Main Stats */}
-      <div className="grid grid-cols-1 gap-2">
-        <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex justify-between items-center">
-          <span className="text-[10px] font-black text-gray-400 uppercase">Taxable Income</span>
-          <span className="font-black text-gray-900">{formatCurrency(taxData.taxableIncome, region)}</span>
-        </div>
-
-        <div className={`p-4 rounded-2xl border flex justify-between items-center transition-all duration-300 ${
-          taxData.taxDue > 0 ? 'bg-orange-50 border-orange-100' : 'bg-emerald-50 border-emerald-100'
-        }`}>
-          <div>
-            <p className="text-[9px] font-black text-gray-500 uppercase">Est. Tax ({regime})</p>
-            <h3 className={`text-lg font-black ${taxData.taxDue > 0 ? 'text-orange-700' : 'text-emerald-700'}`}>
-              {formatCurrency(taxData.taxDue, region)}
-            </h3>
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-0">
+        <div>
+          <div className="text-[13px] font-extrabold text-slate-900 tracking-tight">🧮 Tax Summary</div>
+          <div className="text-[9px] text-slate-400 font-semibold mt-0.5">
+            FY 2024-25 &nbsp;·&nbsp;
+            {tax.mode === 'salaried' ? '👔 Salaried' : '🏢 Business'} &nbsp;·&nbsp;
+            <span style={{ color: rc }}>{isOld ? '🔵 Old' : '🟢 New'} Regime</span>
           </div>
-          {taxData.taxDue === 0 && (
-            <span className="text-[10px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-full">NIL</span>
-          )}
         </div>
-
-        <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 flex justify-between items-center">
-          <span className="text-[10px] font-black text-blue-600 uppercase">In-Hand (Annual)</span>
-          <span className="font-black text-blue-900">{formatCurrency(taxData.netSavings, region)}</span>
-        </div>
+        <span className="text-[8px] font-semibold text-slate-400">Saved {savedDate}</span>
       </div>
 
-      {/* Step 4: Advance Tax Calendar */}
-      {taxData.deadlines.length > 0 && (
-        <div className="bg-gray-900 p-4 rounded-2xl shadow-inner">
-          <p className="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-tighter text-center">📅 Advance Tax Deadlines</p>
-          <div className="grid grid-cols-2 gap-2">
-            {taxData.deadlines.map((item, idx) => (
-              <div key={idx} className="bg-gray-800/50 p-2 rounded-lg border border-gray-700">
-                <p className="text-[8px] font-bold text-gray-500">{item.date} ({item.pct})</p>
-                <p className="text-[10px] font-black text-white">{formatCurrency(item.amount, region)}</p>
+      {/* ── 4 Stat cards ── */}
+      <div className="grid grid-cols-2 gap-2 px-4">
+        <StatCard
+          label={tax.mode === 'salaried' ? 'Gross Salary' : 'Gross Income'}
+          value={fmt(tax.grossIncome)}
+          color="#0f172a"
+          bg="#fff"
+        />
+        <StatCard
+          label="Taxable Income"
+          value={fmt(tax.taxableIncome)}
+          color={rDark}
+          bg={rLight}
+        />
+        <StatCard
+          label="Total Tax"
+          value={fmt(tax.totalTax)}
+          color="#92400e"
+          bg="#fffbeb"
+        />
+        <StatCard
+          label={tax.refund > 0 ? '🎉 Refund Due' : '💳 Still to Pay'}
+          value={fmt(tax.refund > 0 ? tax.refund : tax.remainingTax)}
+          color={tax.refund > 0 ? '#059669' : '#d97706'}
+          bg={tax.refund > 0 ? '#ecfdf5' : '#fff7ed'}
+        />
+      </div>
+
+      {/* ── Next Advance Tax Due ── */}
+      {tax.totalTax > 10000 && (
+        <div className="mx-4 rounded-[12px] p-[11px_13px]" style={{ background: rLight, border: `1px solid ${rBorder}` }}>
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <div className="text-[10px] font-extrabold" style={{ color: rDark }}>
+                📅 Next Due — {nextQ.label} · {nextQ.due}
               </div>
-            ))}
+              <div className="text-[9px] font-semibold mt-0.5" style={{ color: rDark, opacity: 0.75 }}>
+                {nextQ.full} · Pay ₹{Math.round(nextQ.instalment).toLocaleString('en-IN')} this instalment
+              </div>
+            </div>
+            <span className="text-[9px] font-extrabold text-white px-2 py-0.5 rounded-full" style={{ background: rc }}>
+              {Math.round(nextQ.pct * 100)}%
+            </span>
+          </div>
+
+          {/* Progress bar — how much of total tax is covered */}
+          <div className="flex items-center gap-2 mt-1">
+            <div className="flex-1 h-[5px] bg-white/60 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-700"
+                style={{ width: `${paidPct}%`, background: rc }} />
+            </div>
+            <span className="text-[9px] font-bold shrink-0" style={{ color: rDark }}>
+              {paidPct}% covered
+            </span>
+          </div>
+          <div className="text-[8px] font-semibold mt-1" style={{ color: rDark, opacity: 0.65 }}>
+            Cumulative due by {nextQ.due}: {fmt(nextQ.cumDue)}
           </div>
         </div>
       )}
 
-      {/* 4. Footer Info */}
-      <div className="flex justify-between items-center px-1">
-        <div className="text-[10px] text-gray-400 font-bold italic flex items-center gap-1">
-          <span className="text-base">💡</span>
-          Rate: <span className="text-emerald-600">{taxData.effectiveRate}%</span>
-        </div>
-        <div className="text-[10px] text-gray-400 font-bold uppercase">
-          Monthly: <span className="text-gray-900">{formatCurrency(taxData.monthly, region)}</span>
-        </div>
+      {/* ── Effective Rate chip ── */}
+      <div className="flex items-center gap-2 px-4">
+        <div className="flex-1 h-[1px] bg-slate-100" />
+        <span className="text-[9px] font-bold text-slate-400 shrink-0">
+          Effective Rate: <strong className="text-slate-600">{tax.effectiveRate}%</strong>
+        </span>
+        <div className="flex-1 h-[1px] bg-slate-100" />
       </div>
 
-      {/* ✅ Save Button with spacing */}
-      <button 
-        onClick={saveTaxToDB}
-        className="w-full mt-2 py-4 bg-gray-900 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all duration-300 active:scale-95"
-      >
-        Save Calculation to Profile
-      </button>
+      {/* ── Footer button ── */}
+      <div className="px-4 pb-4">
+        <button
+          onClick={() => navigate('/tax-estimator')}
+          className="w-full py-2.5 rounded-xl border-none cursor-pointer text-[11px] font-bold tracking-wide transition-all text-white"
+          style={{ background: '#0f172a' }}
+          onMouseEnter={e => e.target.style.background = rc}
+          onMouseLeave={e => e.target.style.background = '#0f172a'}>
+          View Full Details &amp; Edit →
+        </button>
+      </div>
     </div>
   );
 };
