@@ -213,7 +213,7 @@ const TransactionsPage = ({ transactions = [], onDelete, onSaveTransaction, budg
                       </td>
 
                       <td className="px-7 py-4 text-center text-slate-400 font-medium text-[11px] group-hover:text-slate-600 transition-colors">
-                        {t.date}
+                        {(t.createdAt || t.date) ? new Date(t.createdAt || t.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true }) : "—"}
                       </td>
 
                       <td className="px-7 py-4">

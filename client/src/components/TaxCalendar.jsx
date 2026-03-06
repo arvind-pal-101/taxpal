@@ -148,12 +148,12 @@ const TaxCalendar = ({ transactions = [] }) => {
               <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">FY 2024-25 · India</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
             {/* Regime Toggle */}
             <div className="flex p-1 bg-gray-100 rounded-xl gap-0.5">
               {[{id:'new',label:'New Regime'},{id:'old',label:'Old Regime'}].map(r => (
                 <button key={r.id} onClick={() => setRegime(r.id)}
-                  className={`px-2 sm:px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap
+                  className={`px-2 sm:px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all
                     ${regime===r.id ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
                   {r.label}
                 </button>
@@ -161,7 +161,7 @@ const TaxCalendar = ({ transactions = [] }) => {
             </div>
             <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
               <span className="text-lg">🇮🇳</span>
-              <span className="text-[11px] font-black text-emerald-700 uppercase tracking-wide hidden sm:inline">India</span>
+              <span className="text-[11px] font-black text-emerald-700 uppercase tracking-wide">India</span>
             </div>
           </div>
         </header>

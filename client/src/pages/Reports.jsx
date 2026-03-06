@@ -129,7 +129,7 @@ function DonutChart({ slices }) {
   // Build paths — special case: single slice = full circle (SVG arc can't draw 360°)
   const paths = slices.map((s, i) => {
     const pct = ((s.value / total) * 100).toFixed(1);
-    const color = CAT_COLORS[i % CAT_COLORS.length];
+    const color = s.color || CAT_COLORS[i % CAT_COLORS.length];
     return { pct, label: s.label, color, value: s.value };
   });
 
@@ -586,7 +586,7 @@ const Reports = ({ transactions: propTxns = [], budgets: propBudgets = [] }) => 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card title="Income vs Expense — Donut">
                 <div className="px-6 pb-5">
-                  <DonutChart slices={[{label:'Income',value:totInc},{label:'Expense',value:totExp}]}/>
+                  <DonutChart slices={[{label:'Income',value:totInc,color:'#10b981'},{label:'Expense',value:totExp,color:'#fb7185'}]}/>
                 </div>
               </Card>
               <Card title="Monthly Grouped Bar">
