@@ -65,7 +65,7 @@ const registerUser = async (req, res) => {
     }
 };
 
-// -----  FORGOT PASSWORD (OTP Bhejna) -----
+// -----  FORGOT PASSWORD  -----
 const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -75,7 +75,7 @@ const forgotPassword = async (req, res) => {
         // 6-digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         user.otp = otp;
-        user.otpExpires = Date.now() + 3600000; // 1 hour
+        user.otpExpires = Date.now() + 3600000; // 60 minutes
         await user.save();
 
         const transporter = nodemailer.createTransport({
@@ -87,10 +87,10 @@ const forgotPassword = async (req, res) => {
         });
 
         await transporter.sendMail({
-            from: process.env.EMAIL_USER,
+            from: `"TaxPal Security" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: 'TaxPal Password Reset OTP',
-            text: `Aapka password reset OTP hai: ${otp}. Ye 1 ghante tak valid hai.`
+            text: `Your password reset OTP is : ${otp}. This code is valid for 60 minutes. For security reasons, do not share this code with anyone.`,
         });
 
         res.status(200).json({ message: "OTP sent to your email!" });

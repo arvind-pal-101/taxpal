@@ -1,194 +1,194 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
-const TransactionModal = ({ isOpen, onClose, onSave, userBudgets = [] }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCustom, setIsCustom] = useState(false);
+const TransactionModal = ({ isOpen, onClose, onSave, initialData, userBudgets = [] }) => {
   const [formData, setFormData] = useState({
     desc: "",
     amount: "",
     type: "income",
-    category: "Salary",
+    category: "",
     date: new Date().toISOString().split('T')[0]
   });
 
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const defaultIncome = ["Salary", "Freelance", "Investment", "Gift"];
+  const defaultExpense = ["Food", "Rent & Bills", "Shopping", "Entertainment", "Transport", "Travel", "Health"];
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    } else {
+      setFormData({
+        desc: "",
+        amount: "",
+        type: "income",
+        category: "", 
+        date: new Date().toISOString().split('T')[0]
+      });
+    }
+  }, [initialData, isOpen]);
+
   if (!isOpen) return null;
 
-  const placeholders = {
-    income: "e.g. Freelance Project, Monthly Salary",
-    expense: "e.g. Starbucks Coffee, House Rent"
+  const getOptions = () => {
+const budgetNames = userBudgets.map(b => {
+  if (typeof b === 'object') {
+    return b.name || b.category;
+  }
+  return b;
+});    
+    const defaults = formData.type === 'income' 
+      ? defaultIncome 
+      : [...budgetNames, ...defaultExpense];
+    
+    return [...new Set(defaults)].filter(Boolean); 
   };
 
-  const getCategories = () => {
-    if (formData.type === 'income') {
-      return ["Salary", "Freelance", "Investment", "Gift"];
-    }
-    const budgetNames = userBudgets.map(b => b.name);
-    const defaults = ["Food", "Rent & Bills", "Shopping", "Entertainment", "Transport"];
-    return [...new Set([...budgetNames, ...defaults])];
-  };
+  const filteredOptions = getOptions().filter(opt => 
+    opt.toLowerCase().includes(formData.category.toLowerCase())
+  );
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.amount || !formData.desc) return;
-    setIsSubmitting(true);
-    try {
-      await onSave({ ...formData, amount: parseFloat(formData.amount) });
-      onClose();
-      setIsCustom(false);
-      setFormData({ desc: "", amount: "", type: "income", category: "Salary", date: new Date().toISOString().split('T')[0] });
-    } catch (error) {
-      console.error("Submission failed:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    if (!formData.category.trim()) return alert("Category is required!");
+    if (!formData.amount || formData.amount <= 0) return alert("Please enter a valid amount!");
+
+    const transactionData = { 
+      ...formData, 
+      amount: Number(formData.amount),
+      id: initialData?.id || Date.now()
+    };
+
+    onSave(transactionData);
+    onClose();
   };
 
-  const accentColor = formData.type === 'income' ? 'emerald' : 'rose';
+  const inputStyle = "w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:border-emerald-500 focus:bg-white transition-all font-medium text-sm";
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
-     
-      <div 
-        className="fixed inset-0 bg-gray-900/40 backdrop-blur-md animate-fadeIn" 
-        onClick={onClose}
-      ></div>
-      
-      <form 
-        onSubmit={handleSubmit} 
-        className="bg-white rounded-[2.5rem] w-full max-w-[420px] p-8 md:p-10 relative z-10 
-                   border border-gray-100 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] 
-                   animate-slideUp"
-      >
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-            <div className="space-y-1">
-                <h3 className="text-2xl font-black text-gray-900 tracking-tighter">Add Entry</h3>
-                <div className={`h-1.5 w-8 rounded-full bg-${accentColor}-500 transition-colors duration-500`}></div>
-            </div>
-            <button 
-              type="button" 
-              onClick={onClose} 
-              className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 text-gray-400 hover:bg-rose-50 hover:text-rose-500 transition-all active:scale-90"
-            >✕</button>
-        </div>
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+      <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] animate-slideUp">
         
-        <div className="space-y-6">
-          {/* Segmented Toggle Control */}
-          <div className="flex gap-1 bg-gray-100/50 p-1.5 rounded-2xl border border-gray-100">
-            <button 
-              type="button"
-              onClick={() => { setFormData({...formData, type: 'income', category: 'Salary'}); setIsCustom(false); }}
-              className={`flex-1 py-3 rounded-[1rem] text-[10px] font-black tracking-widest transition-all duration-500
-                ${formData.type === 'income' 
-                  ? 'bg-white text-emerald-600 shadow-sm' 
-                  : 'text-gray-400 hover:text-emerald-500'}`}
-            >
-              INCOME
-            </button>
-            <button 
-              type="button"
-              onClick={() => { setFormData({...formData, type: 'expense', category: 'Food'}); setIsCustom(false); }}
-              className={`flex-1 py-3 rounded-[1rem] text-[10px] font-black tracking-widest transition-all duration-500
-                ${formData.type === 'expense' 
-                  ? 'bg-white text-rose-500 shadow-sm' 
-                  : 'text-gray-400 hover:text-rose-500'}`}
-            >
-              EXPENSE
-            </button>
-          </div>
-
-          {/* Description Input */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] ml-1">Description</label>
-            <input 
-              required 
-              className={`w-full bg-gray-50/50 p-4 rounded-2xl outline-none border-2 border-transparent 
-                         focus:bg-white focus:border-${accentColor}-500/20 focus:ring-[6px] focus:ring-${accentColor}-500/5 
-                         transition-all duration-300 font-bold text-sm text-gray-800 placeholder:text-gray-300`} 
-              placeholder={placeholders[formData.type]} 
-              value={formData.desc}
-              onChange={e => setFormData({...formData, desc: e.target.value})} 
-            />
-          </div>
-
-          {/* Amount & Category Row */}
-          <div className="flex gap-4">
-              <div className="flex-1 space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] ml-1">Amount</label>
-                <div className="relative">
-                   <span className={`absolute left-4 top-1/2 -translate-y-1/2 font-black text-sm text-${accentColor}-500`}>$</span>
-                   <input 
-                    required type="number" step="0.01"
-                    className={`w-full bg-gray-50/50 p-4 pl-8 rounded-2xl outline-none border-2 border-transparent 
-                               focus:bg-white focus:border-${accentColor}-500/20 
-                               transition-all duration-300 font-black text-sm text-gray-800`} 
-                    placeholder="0.00" 
-                    value={formData.amount}
-                    onChange={e => setFormData({...formData, amount: e.target.value})} 
-                  />
-                </div>
-              </div>
-
-              <div className="flex-1 space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] ml-1">Category</label>
-                <div className="relative h-[56px]">
-                  {!isCustom ? (
-                    <select 
-                      className={`w-full h-full bg-gray-50/50 px-4 rounded-2xl outline-none border-2 border-transparent 
-                                 focus:bg-white focus:border-${accentColor}-500/20 transition-all 
-                                 font-black text-[10px] uppercase text-gray-500 cursor-pointer appearance-none`}
-                      value={formData.category}
-                      onChange={e => e.target.value === "CUSTOM" ? (setIsCustom(true), setFormData({...formData, category: ""})) : setFormData({...formData, category: e.target.value})}
-                    >
-                      {getCategories().map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                      <option value="CUSTOM" className="text-emerald-600">+ CUSTOM...</option>
-                    </select>
-                  ) : (
-                    <div className="relative h-full animate-slideRight">
-                      <input 
-                        autoFocus
-                        className={`w-full h-full bg-white px-4 pr-10 rounded-2xl outline-none border-2 border-${accentColor}-500/30 
-                                   font-black text-[10px] uppercase text-gray-700`}
-                        placeholder="Name..."
-                        value={formData.category}
-                        onChange={e => setFormData({...formData, category: e.target.value})}
-                      />
-                      <button type="button" onClick={() => setIsCustom(false)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-rose-500">✕</button>
-                    </div>
-                  )}
-                </div>
-              </div>
-          </div>
-
-          {/* Date Picker */}
-          <div className="space-y-2">
-             <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] ml-1">Transaction Date</label>
-             <input 
-               type="date" 
-               className={`w-full bg-gray-50/50 p-4 rounded-2xl outline-none border-2 border-transparent 
-                          focus:bg-white focus:border-${accentColor}-500/20 transition-all 
-                          font-bold text-sm text-gray-500`} 
-               value={formData.date}
-               onChange={e => setFormData({...formData, date: e.target.value})} 
-             />
-          </div>
-
-          {/* Footer Action */}
-          <div className="pt-4">
-            <button 
-              disabled={isSubmitting}
-              type="submit" 
-              className={`w-full py-5 rounded-2xl font-black text-[11px] uppercase tracking-[0.25em] transition-all shadow-xl active:scale-[0.97] flex items-center justify-center gap-3
-                ${isSubmitting ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-950 text-white hover:bg-black hover:-translate-y-1 hover:shadow-2xl shadow-gray-200'}
-              `}
-            >
-              {isSubmitting ? (
-                <div className="w-5 h-5 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin"></div>
-              ) : "Confirm Transaction"}
-            </button>
-          </div>
+        <div className="p-8 pb-4 flex justify-between items-center border-b border-gray-50 shrink-0">
+          <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">
+            {initialData ? `✏️ Edit ${formData.type}` : "✨ New Record"}
+          </h2>
+          <button onClick={onClose} className="text-3xl text-gray-400 hover:text-gray-900 transition-colors">&times;</button>
         </div>
-      </form>
+
+        <form onSubmit={handleSubmit} className="p-8 pt-6 space-y-5 overflow-y-auto custom-scrollbar">
+          
+          {!initialData ? (
+            <div className="flex bg-gray-100 p-1 rounded-2xl shrink-0">
+             {['income', 'expense'].map((t) => (
+  <button
+    key={t}
+    type="button"
+    onClick={() => {
+      setFormData({...formData, type: t, category: ""});
+      setShowDropdown(false);
+    }}
+    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+      formData.type === t 
+        ? t === 'income' 
+          ? 'bg-white text-emerald-600 shadow-sm' 
+          : 'bg-white text-rose-600 shadow-sm'
+        : t === 'income'
+          ? 'text-gray-400 hover:text-emerald-500 hover:bg-emerald-50/50' // Income hover
+          : 'text-gray-400 hover:text-rose-500 hover:bg-rose-50/50'       // Expense hover
+    }`}
+  >
+    {t}
+  </button>
+))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center pb-2">
+               <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.1em] shadow-sm border ${
+                 formData.type === 'income' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'
+               }`}>
+                 Fixed as {formData.type}
+               </span>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Description</label>
+            <input required className={inputStyle} placeholder="What was this for?" value={formData.desc} onChange={(e) => setFormData({...formData, desc: e.target.value})} />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Amount</label>
+            <input required type="number" className={inputStyle} placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} />
+          </div>
+
+          {/* Category Dropdown */}
+          <div className="space-y-1 relative" ref={dropdownRef}>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Category</label>
+            <div className="relative group">
+              <input 
+                required
+                className={`${inputStyle} pr-12`}
+                placeholder="Type or select category..."
+                value={formData.category}
+                onFocus={() => setShowDropdown(true)}
+                onChange={(e) => {
+                  setFormData({...formData, category: e.target.value});
+                  setShowDropdown(true);
+                }}
+                autoComplete="off"
+              />
+              <div className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none group-focus-within:text-emerald-500 transition-colors">▼</div>
+            </div>
+            
+            {showDropdown && (
+              <div className="absolute z-[999] left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl max-h-48 overflow-y-auto animate-fadeIn border-t-4 border-t-emerald-500">
+                {filteredOptions.length > 0 ? (
+                  filteredOptions.map((opt) => (
+                    <div 
+                      key={opt}
+                      onClick={() => {
+                        setFormData({...formData, category: opt});
+                        setShowDropdown(false);
+                      }}
+                      className="px-6 py-4 text-sm font-bold text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 cursor-pointer transition-all flex justify-between items-center"
+                    >
+                      {opt}
+                      {formData.category === opt && <span className="text-emerald-500 text-xs">✓</span>}
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-6 py-4">
+                    <p className="text-[10px] font-black text-emerald-500 uppercase italic">✨ Custom: "{formData.category}"</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Date</label>
+            <input type="date" className={inputStyle} value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
+          </div>
+
+          <div className="pt-2">
+            <button type="submit" className="w-full py-5 bg-gray-900 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all shadow-xl active:scale-95">
+              {initialData ? "Update Transaction" : "Confirm & Save"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

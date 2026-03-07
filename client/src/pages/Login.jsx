@@ -11,13 +11,29 @@ const Login = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (error) setError("");
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
+    // --- CLIENT-SIDE VALIDATION START ---
+    if (!formData.email) {
+      setError("Please enter your email address.");
+      return;
+    }
+    if (!formData.password) {
+      setError("Please enter your password.");
+      return;
+    }
+    if (formData.password.length < 6) {
+      setError("Wrong password! Please enter a valid password.");
+      return;
+    }
+    // --- CLIENT-SIDE VALIDATION END ---
+
+    setLoading(true);
     try {
       const response = await fetch("http://localhost:5000/api/auth/login", {
         method: "POST",
@@ -28,16 +44,10 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // -------- FIXED LOGIC START --------
         localStorage.setItem("token", data.accessToken);
         localStorage.setItem("userName", data.user.name);
         localStorage.setItem("userEmail", data.user.email);
-        
-        // Wait for storage to finish writing
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 100);
-        // --- FIXED LOGIC END ---
+        setTimeout(() => navigate("/dashboard"), 100);
       } else {
         setError(data.message || "Invalid credentials");
       }
@@ -48,32 +58,58 @@ const Login = () => {
     }
   };
 
+  const getInputClass = (fieldName) => {
+    const errText = error.toLowerCase();
+    const base = "w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none transition-all duration-300";
+    let stateClass = "focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100";
+
+    if (error) {
+      
+      const isCredentialError = errText.includes("credentials");
+
+      if (fieldName === "email") {
+        const isEmailError = errText.includes("email") || errText.includes("found");
+        if (isEmailError || (isCredentialError && !errText.includes("password"))) {
+          stateClass = "border-red-200 bg-red-50/30 focus:border-red-500 focus:ring-4 focus:ring-red-100";
+        }
+      }
+
+      if (fieldName === "password") {
+        const isPasswordError = errText.includes("password") || errText.includes("character") || errText.includes("length");
+        if (isPasswordError || isCredentialError) {
+          stateClass = "border-red-200 bg-red-50/30 focus:border-red-500 focus:ring-4 focus:ring-red-100";
+        }
+      }
+    }
+
+    return `${base} ${stateClass}`;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-emerald-50 flex items-center justify-center px-6">
       <div className="w-full max-w-md">
         <div className="bg-white p-10 rounded-[2.5rem] border border-emerald-100 shadow-[0_20px_50px_rgba(16,185,129,0.1)] relative overflow-hidden">
           
-          {/* Header */}
           <div className="text-center mb-10">
-            <h2 className="text-4xl font-black text-gray-900 mb-2">Welcome Back</h2>
+            <h2 className="text-4xl font-black text-gray-900 mb-2 tracking-tight">Welcome Back</h2>
             <p className="text-gray-500 font-medium">Login to your TaxPal account</p>
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 text-red-600 border-l-4 border-red-500 rounded-r-xl text-sm font-medium animate-shake">
+            <div className="mb-6 p-4 bg-red-50 text-red-600 border-l-4 border-red-500 rounded-r-xl text-sm font-bold animate-shake">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-6" noValidate>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Email Address <span className="text-red-500">*</span></label>
               <input
                 type="email"
                 name="email"
-                required
-                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all duration-300"
+                className={getInputClass("email")}
                 placeholder="john@example.com"
+                value={formData.email}
                 onChange={handleChange}
               />
             </div>
@@ -116,8 +152,8 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-4 rounded-2xl text-white font-bold text-lg shadow-lg shadow-emerald-200 transition-all active:scale-95 ${
-                loading ? "bg-emerald-300 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700"
+              className={`w-full py-4 rounded-2xl text-white font-black text-lg shadow-lg shadow-emerald-200 transition-all active:scale-95 ${
+                loading ? "bg-emerald-300 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 hover:-translate-y-0.5"
               }`}
             >
               {loading ? "Signing in..." : "Login"}

@@ -12,11 +12,11 @@ const ResetPassword = () => {
 
   const email = location.state?.email || "your email";
 
- const handleReset = async (e) => {
+  const handleReset = async (e) => {
     e.preventDefault();
     setError("");
 
-    // 1. Validate password length (minimum 6 characters)
+    // 1. Validate password length
     if (newPassword.length < 6) {
       setError("Password must be at least 6 characters long!");
       return;
@@ -44,10 +44,9 @@ const ResetPassword = () => {
 
       const data = await response.json();
       if (response.ok) {
-        alert("Password updated successfully!"); 
+        alert("Password updated successfully!");
         navigate("/login");
       } else {
-       // Handle server-side error responses
         setError(data.message || "Invalid OTP or request");
       }
     } catch (error) {
@@ -57,20 +56,27 @@ const ResetPassword = () => {
     }
   };
 
+  const getInputClass = (fieldName) => {
+    const isError = error.toLowerCase().includes(fieldName.toLowerCase());
+    const base = "w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none transition-all duration-300";
+    
+    const activeState = isError 
+      ? "focus:bg-white focus:border-red-500 focus:ring-4 focus:ring-red-100 border-red-200" 
+      : "focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100";
+    
+    return `${base} ${activeState}`;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-emerald-50 flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-lg">
-        
-        {/* Main Card */}
         <div className="bg-white p-10 rounded-[2.5rem] border border-emerald-100 shadow-[0_20px_50px_rgba(16,185,129,0.1)] relative overflow-hidden">
           
-          {/* Header Section */}
           <div className="text-center mb-10">
             <h2 className="text-4xl font-black text-gray-900 mb-2">Set Password</h2>
             <p className="text-gray-500 font-medium">Verify OTP and secure your account</p>
           </div>
 
-          {/* OTP Info Box */}
           <div className="mb-8 p-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-center">
             <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mb-1">OTP sent to</p>
             <p className="text-sm font-semibold text-gray-700">{email}</p>
@@ -92,42 +98,41 @@ const ResetPassword = () => {
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 required
-                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all duration-300"
+                className={getInputClass("OTP")}
               />
             </div>
 
-           {/* Responsive password grid (Stacked on mobile, side-by-side on desktop) */}
-<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-  {/* New Password */}
-  <div className="flex flex-col">
-    <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">
-      New Password <span className="text-red-500">*</span>
-    </label>
-    <input
-      type="password"
-      placeholder="••••••••"
-      value={newPassword}
-      onChange={(e) => setNewPassword(e.target.value)}
-      required
-      className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all duration-300"
-    />
-  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* New Password */}
+              <div className="flex flex-col">
+                <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">
+                  New Password <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  className={getInputClass("Password")}
+                />
+              </div>
 
-  {/* Confirm Password */}
-  <div className="flex flex-col">
-    <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">
-      Confirm <span className="text-red-500">*</span>
-    </label>
-    <input
-      type="password"
-      placeholder="••••••••"
-      value={confirmPassword}
-      onChange={(e) => setConfirmPassword(e.target.value)}
-      required
-      className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all duration-300"
-    />
-  </div>
-</div>
+              {/* Confirm Password */}
+              <div className="flex flex-col">
+                <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">
+                  Confirm <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className={getInputClass("match")}
+                />
+              </div>
+            </div>
 
             <button
               type="submit"
@@ -142,7 +147,6 @@ const ResetPassword = () => {
             </button>
           </form>
 
-          {/* Footer */}
           <div className="mt-8 text-center">
             <button 
               onClick={() => navigate("/login")} 

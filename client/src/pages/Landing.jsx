@@ -7,7 +7,7 @@ const Landing = () => {
     <div className="bg-white min-h-screen font-sans">
       <Navbar />
 
-      {/* HERO SECTION - Emerald Premium Style */}
+      {/* HERO SECTION  */}
       <section className="bg-gradient-to-br from-white to-emerald-50 pt-16 pb-20 md:pt-24 md:pb-32">
         <div className="max-w-5xl mx-auto px-6 text-center">
           <h1 className="text-4xl md:text-7xl font-extrabold text-gray-900 mb-6 leading-tight tracking-tight">
