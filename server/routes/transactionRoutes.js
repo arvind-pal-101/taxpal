@@ -1,51 +1,89 @@
-const express = require('express');
-const router = express.Router();
+const express    = require('express');
+const router     = express.Router();
 const Transaction = require('../models/Transaction');
-const authMiddleware = require('../middleware/authMiddleware'); 
+const protect    = require('../middleware/authMiddleware');
 
-router.get('/all', authMiddleware, async (req, res) => {
+// ── GET /api/transactions/all ─────────────────────────────
+router.get('/all', protect, async (req, res) => {
   try {
-    const transactions = await Transaction.find({ user: req.user.id }).sort({ createdAt: -1 });
+    const transactions = await Transaction
+      .find({ user: req.user.id })
+      .sort({ date: -1, createdAt: -1 });
     res.json(transactions);
   } catch (err) {
     res.status(500).json({ message: "Server Error" });
   }
 });
 
-router.post('/add', authMiddleware, async (req, res) => {
+// ── POST /api/transactions/add ────────────────────────────
+router.post('/add', protect, async (req, res) => {
   try {
     const { desc, amount, type, category, date } = req.body;
+
+    if (!desc || !amount || !type || !category || !date)
+      return res.status(400).json({ message: "All fields are required" });
+
     const newTx = new Transaction({
       user: req.user.id,
       desc,
-      amount,
+      amount: Number(amount),
       type,
       category,
-      date
+      date: new Date(date)
     });
-    const savedTx = await newTx.save();
-    res.json(savedTx);
+
+    const saved = await newTx.save();
+    res.status(201).json(saved);
   } catch (err) {
     res.status(500).json({ message: "Saving Failed" });
   }
 });
 
-router.put('/update/:id', authMiddleware, async (req, res) => {
+// ── PUT /api/transactions/update/:id ──────────────────────
+router.put('/update/:id', protect, async (req, res) => {
   try {
-    const updatedTx = await Transaction.findByIdAndUpdate(
+    // 1. Find transaction
+    const tx = await Transaction.findById(req.params.id);
+    if (!tx) return res.status(404).json({ message: "Transaction not found" });
+
+    // 2. Ownership check — user can only update their own
+    if (tx.user.toString() !== req.user.id)
+      return res.status(403).json({ message: "Not authorized to update this transaction" });
+
+    // 3. Update
+    const { desc, amount, type, category, date } = req.body;
+    const updated = await Transaction.findByIdAndUpdate(
       req.params.id,
-      { $set: req.body },
+      { $set: {
+          desc,
+          amount: Number(amount),
+          type,
+          category,
+          date: new Date(date)
+        }
+      },
       { new: true }
     );
-    res.json(updatedTx);
+
+    res.json(updated);
   } catch (err) {
     res.status(500).json({ message: "Update Failed" });
   }
 });
 
-router.delete('/delete/:id', authMiddleware, async (req, res) => {
+// ── DELETE /api/transactions/delete/:id ───────────────────
+router.delete('/delete/:id', protect, async (req, res) => {
   try {
-    await Transaction.findByIdAndDelete(req.params.id);
+    // 1. Find transaction
+    const tx = await Transaction.findById(req.params.id);
+    if (!tx) return res.status(404).json({ message: "Transaction not found" });
+
+    // 2. Ownership check — user can only delete their own
+    if (tx.user.toString() !== req.user.id)
+      return res.status(403).json({ message: "Not authorized to delete this transaction" });
+
+    // 3. Delete
+    await tx.deleteOne();
     res.json({ message: "Deleted Successfully" });
   } catch (err) {
     res.status(500).json({ message: "Delete Failed" });

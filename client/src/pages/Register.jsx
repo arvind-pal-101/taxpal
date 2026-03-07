@@ -2,6 +2,12 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {Eye,EyeOff} from "lucide-react";
 
+const COUNTRIES = [
+  { value: "india", label: "🇮🇳 India",         currency: "₹" },
+  { value: "usa",   label: "🇺🇸 United States",  currency: "$" },
+  { value: "uk",    label: "🇬🇧 United Kingdom", currency: "£" },
+];
+
 const Register = () => {
   const navigate = useNavigate();
   const [showPassword,setShowPassword] = useState(false);
@@ -9,13 +15,13 @@ const Register = () => {
 
   const [formData, setFormData] = useState({
     fullName: "",
-    email: "",
+    email:    "",
     password: "",
-    country: "",
-    income: ""
+    country:  "",
+    income:   ""
   });
 
-  const [errors, setErrors] = useState({});
+  const [errors,  setErrors]  = useState({});
   const [loading, setLoading] = useState(false);
 
   const formatNumber = (value) => {
@@ -36,11 +42,11 @@ const Register = () => {
     const { fullName, email, password, country, income } = formData;
     let newErrors = {};
 
-    if (!fullName) newErrors.fullName = "Name required";
-    if (!email) newErrors.email = "Email required";
+    if (!fullName)                        newErrors.fullName = "Name required";
+    if (!email)                           newErrors.email    = "Email required";
     if (!password || password.length < 6) newErrors.password = "Min 6 characters";
-    if (!country) newErrors.country = "Country required";
-    if (!income) newErrors.income = "Income required";
+    if (!country)                         newErrors.country  = "Country required";
+    if (!income)                          newErrors.income   = "Income required";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -48,20 +54,20 @@ const Register = () => {
       return;
     }
 
-    const normalizedCountry = country.trim().toLowerCase();
-    const selectedCurrency = currencyMap[normalizedCountry] || "₹";
+    const selected = COUNTRIES.find(c => c.value === country);
+    const currency = selected ? selected.currency : "₹";
 
     try {
       const response = await fetch("http://localhost:5000/api/auth/register", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: fullName,
+          name:           fullName,
           email,
           password,
           country,
           income_bracket: Number(income.replace(/,/g, "")),
-          currency: selectedCurrency
+          currency
         })
       });
 
@@ -78,48 +84,59 @@ const Register = () => {
     }
   };
 
-  const dynamicCurrency = currencyMap[formData.country.trim().toLowerCase()] || "₹";
+  const selectedCountry = COUNTRIES.find(c => c.value === formData.country);
+  const dynamicCurrency = selectedCountry ? selectedCountry.currency : "₹";
 
-  // Reusable Input Class Logic 
   const getInputClass = (fieldName) => {
-    const baseClass = "w-full px-5 py-4 bg-gray-50 border rounded-2xl outline-none transition-all duration-300";
+    const base       = "w-full px-5 py-4 bg-gray-50 border rounded-2xl outline-none transition-all duration-300";
     const errorState = "border-red-500 focus:ring-4 focus:ring-red-100";
     const normalState = "border-gray-100 focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100";
-    
-    return `${baseClass} ${errors[fieldName] ? errorState : normalState}`;
+    return `${base} ${errors[fieldName] ? errorState : normalState}`;
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-emerald-50 flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
-        
-        {/* Main Card */}
         <div className="bg-white p-10 rounded-[2.5rem] border border-emerald-100 shadow-[0_20px_50px_rgba(16,185,129,0.1)] relative overflow-hidden">
-          
-          {/* Header Section */}
+
           <div className="text-center mb-10">
             <h2 className="text-4xl font-black text-gray-900 mb-2">Create Account</h2>
-            <p className="text-gray-500 font-medium">Join <span className="text-emerald-600 font-semibold">TaxPal</span> to manage your finances</p>
+            <p className="text-gray-500 font-medium">
+              Join <span className="text-emerald-600 font-semibold">TaxPal</span> to manage your finances
+            </p>
           </div>
 
           {errors.submit && (
             <div className="mb-6 p-4 bg-red-50 text-red-600 border-l-4 border-red-500 rounded-r-xl text-sm font-medium">
-              {errors.submit}
+              ⚠️ {errors.submit}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+
             {/* Full Name */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Full Name <span className="text-red-500">*</span></label>
-              <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} className={getInputClass("fullName")} placeholder="John Doe" />
+              <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">
+                Full Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text" name="fullName" value={formData.fullName}
+                onChange={handleChange} className={getInputClass("fullName")}
+                placeholder="John Doe"
+              />
               {errors.fullName && <p className="text-xs text-red-600 mt-1.5 font-medium ml-1">⚠️ {errors.fullName}</p>}
             </div>
 
-            {/* Email Address */}
+            {/* Email */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Email Address <span className="text-red-500">*</span></label>
-              <input type="email" name="email" value={formData.email} onChange={handleChange} className={getInputClass("email")} placeholder="name@company.com" />
+              <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">
+                Email Address <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email" name="email" value={formData.email}
+                onChange={handleChange} className={getInputClass("email")}
+                placeholder="name@company.com"
+              />
               {errors.email && <p className="text-xs text-red-600 mt-1.5 font-medium ml-1">⚠️ {errors.email}</p>}
             </div>
 
@@ -157,45 +174,48 @@ const Register = () => {
 </div>
 
 
-           {/* Dual Column - Responsive adjustment */}
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-  {/* Country */}
-  <div>
-    <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Country <span className="text-red-500">*</span></label>
-    <input 
-      type="text" 
-      name="country" 
-      value={formData.country} 
-      onChange={handleChange} 
-      className={getInputClass("country")} 
-      placeholder="India" 
-    />
-    {errors.country && <p className="text-xs text-red-600 mt-1.5 font-medium ml-1">⚠️ {errors.country}</p>}
-  </div>
+            {/* Country + Income */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-  {/* Income */}
-  <div>
-    <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Est. Annual Income ({dynamicCurrency}) <span className="text-red-500">*</span></label>
-    <input 
-      type="text" 
-      name="income" 
-      value={formData.income} 
-      onChange={(e) => {
-        const formatted = formatNumber(e.target.value);
-        setFormData({ ...formData, income: formatted });
-        if (errors.income) setErrors({ ...errors, income: "" });
-      }} 
-      className={getInputClass("income")} 
-      placeholder="5,00,000" 
-    />
-    {errors.income && <p className="text-xs text-red-600 mt-1.5 font-medium ml-1">⚠️ {errors.income}</p>}
-  </div>
-</div>
+              {/* Country — Dropdown */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">
+                  Country <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="country" value={formData.country}
+                  onChange={handleChange}
+                  className={`${getInputClass("country")} cursor-pointer`}
+                >
+                  <option value="">Select country</option>
+                  {COUNTRIES.map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+                {errors.country && <p className="text-xs text-red-600 mt-1.5 font-medium ml-1">⚠️ {errors.country}</p>}
+              </div>
 
-            {/* Submit Button */}
-            <button 
-              type="submit" 
-              disabled={loading} 
+              {/* Income */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">
+                  Annual Income ({dynamicCurrency}) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text" name="income" value={formData.income}
+                  onChange={(e) => {
+                    const formatted = formatNumber(e.target.value);
+                    setFormData({ ...formData, income: formatted });
+                    if (errors.income) setErrors({ ...errors, income: "" });
+                  }}
+                  className={getInputClass("income")}
+                  placeholder="5,00,000"
+                />
+                {errors.income && <p className="text-xs text-red-600 mt-1.5 font-medium ml-1">⚠️ {errors.income}</p>}
+              </div>
+            </div>
+
+            <button
+              type="submit" disabled={loading}
               className={`w-full py-4 rounded-2xl text-white font-bold text-lg shadow-lg shadow-emerald-200 transition-all active:scale-95 mt-4 ${
                 loading ? "bg-emerald-300 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700"
               }`}
@@ -204,7 +224,6 @@ const Register = () => {
             </button>
           </form>
 
-          {/* Footer Link */}
           <p className="mt-8 text-center text-gray-500 font-medium">
             Already have an account?{" "}
             <Link to="/login" className="text-emerald-600 font-bold hover:underline underline-offset-4">

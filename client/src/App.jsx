@@ -2,159 +2,144 @@ import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import axios from "axios";
 
-// Pages Imports
-import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import Settings from "./pages/Settings";
+// Pages
+import Landing        from "./pages/Landing";
+import Login          from "./pages/Login";
+import Register       from "./pages/Register";
+import Dashboard      from "./pages/Dashboard";
+import Settings       from "./pages/Settings";
 import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
+import ResetPassword  from "./pages/ResetPassword";
+import Reports        from "./pages/Reports";
+import TaxEstimatorPage from "./pages/TaxEstimatorPage";
 
-// Components Imports
-import TransactionsPage from "./components/TransactionsPage";
-import TransactionModal from "./components/TransactionModal";
-import Documents from './components/Documents';
-import TaxCalendar from "./components/TaxCalendar";
+// Extra Pages
+import BudgetPage from "./pages/BudgetPage";
+
+// Components
+import TransactionsPage   from "./components/TransactionsPage";
+import TransactionModal   from "./components/TransactionModal";
+import TaxCalendar        from "./components/TaxCalendar";
+
+const API_URL    = "http://localhost:5000/api/transactions";
+const BUDGET_URL = "http://localhost:5000/api/budgets";
 
 function App() {
-  // States
-  const [transactions, setTransactions] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [transactions,       setTransactions]       = useState([]);
+  const [budgets,            setBudgets]            = useState([]);
+  const [isModalOpen,        setIsModalOpen]        = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
 
-  const API_URL = "http://localhost:5000/api/transactions";
   const token = localStorage.getItem("token");
 
+  // Fetch transactions
   useEffect(() => {
-    const fetchTransactions = async () => {
-      if (!token) return;
-      try {
-        const res = await axios.get(`${API_URL}/all`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setTransactions(res.data);
-      } catch (err) {
-        console.error("Fetch error:", err);
-      }
-    };
-    fetchTransactions();
+    if (!token) return;
+    axios.get(`${API_URL}/all`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => setTransactions(res.data))
+      .catch(err => console.error("Fetch transactions error:", err));
   }, [token]);
 
- const handleSaveTransaction = async (data) => {
-  try {
-    
-    const transactionId = data._id || editingTransaction?._id;
+  // Fetch budgets
+  useEffect(() => {
+    if (!token) return;
+    axios.get(`${BUDGET_URL}/all`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => setBudgets(res.data))
+      .catch(err => console.error("Fetch budgets error:", err));
+  }, [token]);
 
-    if (transactionId) {
-      // 1. UPDATE LOGIC
-      const res = await axios.put(`${API_URL}/update/${transactionId}`, data, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      setTransactions(prev => prev.map(t => t._id === transactionId ? res.data : t));
-      console.log("Updated successfully!");
-    } else {
-      // 2. ADD LOGIC
-      const res = await axios.post(`${API_URL}/add`, data, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setTransactions(prev => [res.data, ...prev]);
-      console.log("Added successfully!");
-    }
-    closeModal();
-  } catch (err) {
-    console.error("Save Error:", err);
-    alert("Error saving to database.");
-  }
-};
-
-  // 3. Delete Logic
-  const handleDelete = async (id) => {
-  // Check karein ki 'id' aa rahi hai ya nahi
-  if (!id) {
-    console.error("ID is undefined!");
-    return;
-  }
-
-  if (window.confirm("Are you sure?")) {
+  // Save / Update transaction
+  // calledFromPage=true  → TransactionsPage has its own modal, don't call closeModal()
+  // calledFromPage=false → global modal, call closeModal()
+  const handleSaveTransaction = async (data, calledFromPage = false) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`${API_URL}/delete/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-   
+      const transactionId = data._id;
+      if (transactionId) {
+        const res = await axios.put(
+          `${API_URL}/update/${transactionId}`, data,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setTransactions(prev => prev.map(t => t._id === transactionId ? res.data : t));
+      } else {
+        const res = await axios.post(
+          `${API_URL}/add`, data,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setTransactions(prev => [res.data, ...prev]);
+      }
+      if (!calledFromPage) closeModal();
+    } catch (err) {
+      console.error("Save Error:", err);
+      alert("Error saving to database.");
+    }
+  };
+
+  // Delete transaction
+  const handleDelete = async (id) => {
+    if (!id) return;
+    if (!window.confirm("Are you sure?")) return;
+    try {
+      await axios.delete(`${API_URL}/delete/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       setTransactions(prev => prev.filter(t => t._id !== id));
     } catch (err) {
       console.error("Delete Error:", err);
       alert("Delete failed");
     }
-  }
-};
-
-  // Modal Helpers
-  const openAddModal = () => {
-    setEditingTransaction(null);
-    setIsModalOpen(true);
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setEditingTransaction(null);
-  };
-
-  const handleEditTrigger = (transaction) => {
-    setEditingTransaction(transaction);
-    setIsModalOpen(true);
-  };
+  const openAddModal      = () => { setEditingTransaction(null); setIsModalOpen(true); };
+  const closeModal        = () => { setIsModalOpen(false); setEditingTransaction(null); };
+  const handleEditTrigger = (t) => { setEditingTransaction(t); setIsModalOpen(true); };
 
   return (
     <div className="app-container">
       <BrowserRouter>
         <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          {/* Public */}
+          <Route path="/"                element={<Landing />} />
+          <Route path="/login"           element={<Login />} />
+          <Route path="/register"        element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/reset-password"  element={<ResetPassword />} />
 
-          {/* Dashboard Route */}
+          {/* App */}
           <Route path="/dashboard" element={
-            <Dashboard 
-              transactions={transactions} 
-              onSaveTransaction={handleSaveTransaction} 
+            <Dashboard
+              transactions={transactions}
+              budgets={budgets}
+              onSaveTransaction={(data) => handleSaveTransaction(data, false)}
             />
           } />
 
-          {/* Transactions Management */}
           <Route path="/transactions" element={
-            <TransactionsPage 
-              transactions={transactions} 
-              onDelete={handleDelete} 
-              onEdit={handleEditTrigger} 
-              onOpenModal={openAddModal}
-              onSaveTransaction={handleSaveTransaction}
+            <TransactionsPage
+              transactions={transactions}
+              budgets={budgets}
+              onDelete={handleDelete}
+              onSaveTransaction={(data) => handleSaveTransaction(data, true)}
             />
           } />
 
-          {/* Other Features */}
-          <Route path="/documents" element={
-            <Documents 
-              transactions={transactions} 
-              onOpenModal={openAddModal} 
+          <Route path="/tax-estimator" element={<TaxEstimatorPage transactions={transactions} />} />
+          <Route path="/reports" element={<Reports transactions={transactions} budgets={budgets} onOpenModal={openAddModal} />} />
+          <Route path="/settings"  element={<Settings />} />
+          <Route path="/calendar"  element={<TaxCalendar transactions={transactions} />} />
+          <Route path="/budget" element={
+            <BudgetPage
+              transactions={transactions}
+              budgets={budgets}
+              setBudgets={setBudgets}
             />
           } />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/calendar" element={<TaxCalendar />} />
         </Routes>
 
-        {/* Global Modal for Add/Edit */}
-        <TransactionModal 
-          isOpen={isModalOpen} 
-          onClose={closeModal} 
-          onSave={handleSaveTransaction} 
-          initialData={editingTransaction} 
+        {/* Global modal — for Dashboard / Reports "Add Record" button */}
+        <TransactionModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          onSave={handleSaveTransaction}
+          initialData={editingTransaction}
+          userBudgets={budgets}
         />
       </BrowserRouter>
     </div>
