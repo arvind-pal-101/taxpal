@@ -3,8 +3,9 @@ import { createPortal } from "react-dom";
 import Sidebar from "../components/Sidebar";
 import { formatCurrency } from "../utils/financeHelpers";
 import axios from "axios";
+import BASE_URL from "../config";
 
-// ── Same categories as TransactionModal ─────────────────────
+// ── Same categories as TransactionModal ─────────────────────────────────
 const SUGGESTED_CATEGORIES = [
   { label: "Food",           emoji: "🍕" },
   { label: "Rent & Bills",   emoji: "🏠" },
@@ -15,7 +16,7 @@ const SUGGESTED_CATEGORIES = [
   { label: "Health",         emoji: "💊" },
 ];
 
-// ── Summary Stat Card with Hover ─────────────────────────────
+// ── Summary Stat Card with Hover ─────────────────────────────────────────
 const StatSummaryCard = ({ s }) => {
   const [hovered, setHovered] = useState(false);
   return (
@@ -25,13 +26,9 @@ const StatSummaryCard = ({ s }) => {
       style={{
         position: 'relative',
         borderRadius: '1.5rem',
-        background: hovered
-          ? `linear-gradient(135deg, white 0%, ${s.accent}08 100%)`
-          : 'white',
+        background: hovered ? `linear-gradient(135deg, white 0%, ${s.accent}08 100%)` : 'white',
         border: `1.5px solid ${hovered ? s.accent + '40' : '#f1f5f9'}`,
-        boxShadow: hovered
-          ? `0 20px 48px -12px ${s.accent}35, 0 0 0 1px ${s.accent}10`
-          : '0 2px 8px rgba(0,0,0,0.04)',
+        boxShadow: hovered ? `0 20px 48px -12px ${s.accent}35, 0 0 0 1px ${s.accent}10` : '0 2px 8px rgba(0,0,0,0.04)',
         transform: hovered ? 'translateY(-5px) scale(1.02)' : 'translateY(0) scale(1)',
         transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
         padding: '22px',
@@ -39,7 +36,6 @@ const StatSummaryCard = ({ s }) => {
         cursor: 'default',
       }}
     >
-      {/* Glow blob behind icon */}
       <div style={{
         position: 'absolute', top: '-10px', right: '-10px',
         width: '70px', height: '70px', borderRadius: '50%',
@@ -48,8 +44,6 @@ const StatSummaryCard = ({ s }) => {
         transition: 'opacity 0.3s ease',
         pointerEvents: 'none',
       }} />
-
-      {/* Icon */}
       <div style={{
         width: '40px', height: '40px', borderRadius: '12px', marginBottom: '14px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -63,8 +57,6 @@ const StatSummaryCard = ({ s }) => {
         {s.icon === 'check'   && <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={s.iconColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
         {s.icon === 'warning' && <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={s.iconColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
       </div>
-
-      {/* Value */}
       <div style={{
         fontSize: '20px', fontWeight: 900,
         color: hovered ? s.accent : '#0f172a',
@@ -72,16 +64,12 @@ const StatSummaryCard = ({ s }) => {
         transition: 'color 0.25s ease',
         marginBottom: '4px',
       }}>{s.value}</div>
-
-      {/* Label */}
       <div style={{
         fontSize: '10px', fontWeight: 800, letterSpacing: '0.14em',
         textTransform: 'uppercase',
         color: hovered ? s.accent + 'aa' : '#94a3b8',
         transition: 'color 0.25s ease',
       }}>{s.label}</div>
-
-      {/* Bottom accent line */}
       <div style={{
         position: 'absolute', bottom: 0, left: '22px', right: '22px', height: '2px',
         background: `linear-gradient(90deg, ${s.accent}, ${s.accent}00)`,
@@ -95,7 +83,7 @@ const StatSummaryCard = ({ s }) => {
   );
 };
 
-// ── Spending Breakdown Chart ──────────────────────────────────
+// ── Spending Breakdown Chart ──────────────────────────────────────────────
 const SpendingChart = ({ budgetData }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
   const total = budgetData.reduce((s, b) => s + b.spent, 0);
@@ -107,7 +95,6 @@ const SpendingChart = ({ budgetData }) => {
       <h3 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">Spending Breakdown</h3>
       <h2 className="text-xl font-black text-slate-900 tracking-tight mb-1">Budget vs Spent</h2>
       <p className="text-[10px] text-slate-400 font-bold mb-6">Hover each row to inspect</p>
-
       <div className="flex flex-col gap-2">
         {budgetData.filter(b => b.spent > 0).sort((a,b) => b.spent - a.spent).map((b, i) => {
           const pctOfLimit = b.limit > 0 ? Math.min((b.spent / b.limit) * 100, 100) : 0;
@@ -119,8 +106,7 @@ const SpendingChart = ({ budgetData }) => {
               onMouseEnter={() => setHoveredRow(i)}
               onMouseLeave={() => setHoveredRow(null)}
               style={{
-                padding: '10px 14px',
-                borderRadius: '14px',
+                padding: '10px 14px', borderRadius: '14px',
                 background: isHov ? `${color}10` : 'transparent',
                 border: `1.5px solid ${isHov ? color + '30' : 'transparent'}`,
                 transform: isHov ? 'translateX(5px)' : 'translateX(0)',
@@ -129,7 +115,6 @@ const SpendingChart = ({ budgetData }) => {
                 cursor: 'default',
               }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                {/* Colored dot — pulses on hover */}
                 <div style={{
                   width: isHov ? '12px' : '8px', height: isHov ? '12px' : '8px',
                   borderRadius: '50%', background: color, flexShrink: 0,
@@ -143,20 +128,11 @@ const SpendingChart = ({ budgetData }) => {
                   transition: 'color 0.2s ease',
                 }}>{b.name}</span>
                 <div style={{ textAlign: 'right' }}>
-                  <span style={{
-                    fontSize: '13px', fontWeight: 900,
-                    color: isHov ? color : '#0f172a',
-                    transition: 'color 0.2s ease',
-                  }}>{formatCurrency(b.spent)}</span>
-                  <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 700, marginLeft: '4px' }}>
-                    / {formatCurrency(b.limit)}
-                  </span>
+                  <span style={{ fontSize: '13px', fontWeight: 900, color: isHov ? color : '#0f172a', transition: 'color 0.2s ease' }}>{formatCurrency(b.spent)}</span>
+                  <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 700, marginLeft: '4px' }}>/ {formatCurrency(b.limit)}</span>
                 </div>
               </div>
-
-              {/* Progress bar — thicker + glowing on hover */}
-              <div style={{ height: isHov ? '8px' : '5px', background: '#f1f5f9', borderRadius: '99px',
-                overflow: 'hidden', transition: 'height 0.2s ease' }}>
+              <div style={{ height: isHov ? '8px' : '5px', background: '#f1f5f9', borderRadius: '99px', overflow: 'hidden', transition: 'height 0.2s ease' }}>
                 <div style={{
                   height: '100%', borderRadius: '99px',
                   width: `${pctOfLimit}%`, background: color,
@@ -164,27 +140,19 @@ const SpendingChart = ({ budgetData }) => {
                   transition: 'all 0.5s ease, box-shadow 0.2s ease',
                 }} />
               </div>
-
-              {/* Tooltip row — only on hover */}
               <div style={{
                 display: 'flex', justifyContent: 'space-between', marginTop: '6px',
                 maxHeight: isHov ? '20px' : '0px', overflow: 'hidden',
                 opacity: isHov ? 1 : 0,
                 transition: 'max-height 0.2s ease, opacity 0.2s ease',
               }}>
-                <span style={{ fontSize: '9px', fontWeight: 700, color: color }}>
-                  {pctOfTotal.toFixed(0)}% of total spending
-                </span>
-                <span style={{ fontSize: '9px', fontWeight: 900, color: color }}>
-                  {pctOfLimit.toFixed(0)}% of limit used
-                </span>
+                <span style={{ fontSize: '9px', fontWeight: 700, color: color }}>{pctOfTotal.toFixed(0)}% of total spending</span>
+                <span style={{ fontSize: '9px', fontWeight: 900, color: color }}>{pctOfLimit.toFixed(0)}% of limit used</span>
               </div>
             </div>
           );
         })}
       </div>
-
-      {/* Total */}
       <div className="mt-6 pt-5 border-t border-slate-100 flex justify-between items-center">
         <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Total Spent</span>
         <span className="text-[20px] font-black text-slate-900 tracking-tight">{formatCurrency(total)}</span>
@@ -193,11 +161,11 @@ const SpendingChart = ({ budgetData }) => {
   );
 };
 
-// ── Budget Modal ──────────────────────────────────────────────
+// ── Budget Modal ──────────────────────────────────────────────────────────
 const BudgetModal = ({ budgets, onSave, onClose }) => {
   const [tempBudgets, setTempBudgets] = useState([...budgets]);
 
-  const addCategory  = () => setTempBudgets([{ id: `temp-${Date.now()}`, name: "", limit: 0 }, ...tempBudgets]);
+  const addCategory    = () => setTempBudgets([{ id: `temp-${Date.now()}`, name: "", limit: 0 }, ...tempBudgets]);
   const removeCategory = (id) => setTempBudgets(tempBudgets.filter(b => (b._id || b.id) !== id));
   const updateCategory = (id, field, value) =>
     setTempBudgets(tempBudgets.map(b =>
@@ -206,7 +174,6 @@ const BudgetModal = ({ budgets, onSave, onClose }) => {
         : b
     ));
 
-  // Duplicate name check — case insensitive
   const hasDuplicate = tempBudgets.some((b, _, arr) => {
     const name = b.name.trim().toLowerCase();
     return name && arr.filter(x => x.name.trim().toLowerCase() === name).length > 1;
@@ -218,10 +185,9 @@ const BudgetModal = ({ budgets, onSave, onClose }) => {
     if (!isValid) return;
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post('/api/budgets/sync', { budgets: tempBudgets }, {
+      const response = await axios.post(`${BASE_URL}/api/budgets/sync`, { budgets: tempBudgets }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      // Use API response — it has createdAt from MongoDB
       onSave(response.data);
       onClose();
     } catch { onClose(); }
@@ -232,7 +198,6 @@ const BudgetModal = ({ budgets, onSave, onClose }) => {
       <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
 
-        {/* Header */}
         <div className="p-6 md:p-8 border-b flex justify-between items-center sticky top-0 bg-white z-10">
           <div>
             <h3 className="text-xl md:text-2xl font-black text-slate-900">Budget Settings</h3>
@@ -244,28 +209,18 @@ const BudgetModal = ({ budgets, onSave, onClose }) => {
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-6 md:p-8 space-y-4 overflow-y-auto bg-slate-50/30">
-
-          {/* Quick category suggestions */}
           <div className="bg-white rounded-[1.5rem] border border-slate-100 p-4">
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">
-              ⚡ Quick Add — click to add category
-            </p>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">⚡ Quick Add — click to add category</p>
             <div className="flex flex-wrap gap-2">
               {SUGGESTED_CATEGORIES.map(cat => {
-                const alreadyAdded = tempBudgets.some(
-                  b => b.name?.toLowerCase() === cat.label.toLowerCase()
-                );
+                const alreadyAdded = tempBudgets.some(b => b.name?.toLowerCase() === cat.label.toLowerCase());
                 return (
                   <button
                     key={cat.label}
                     onClick={() => {
                       if (alreadyAdded) return;
-                      setTempBudgets(prev => [
-                        { id: `temp-${Date.now()}-${cat.label}`, name: cat.label, limit: 0 },
-                        ...prev,
-                      ]);
+                      setTempBudgets(prev => [{ id: `temp-${Date.now()}-${cat.label}`, name: cat.label, limit: 0 }, ...prev]);
                     }}
                     disabled={alreadyAdded}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black transition-all
@@ -293,7 +248,6 @@ const BudgetModal = ({ budgets, onSave, onClose }) => {
             return (
               <div key={id} className="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-sm">
                 <div className="flex flex-col md:flex-row gap-4 md:items-start">
-                  {/* Name */}
                   <div className="flex-[2] flex flex-col">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Category Name</label>
                     <input
@@ -308,7 +262,6 @@ const BudgetModal = ({ budgets, onSave, onClose }) => {
                       <span className="text-[9px] font-bold text-rose-500 mt-1">⚠ Duplicate category — already exists</span>
                     )}
                   </div>
-                  {/* Limit */}
                   <div className="flex-1 flex flex-col">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 md:text-right">Budget Limit</label>
                     <input
@@ -325,15 +278,13 @@ const BudgetModal = ({ budgets, onSave, onClose }) => {
                     />
                     {limitInvalid && <span className="text-[9px] font-bold text-rose-500 mt-1">⚠ Enter a valid limit</span>}
                   </div>
-                  {/* Delete */}
                   <button onClick={() => removeCategory(id)}
                     className="hidden md:flex mt-8 text-slate-300 hover:text-rose-500 p-2 hover:bg-rose-50 rounded-full transition-all">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
                       <path d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
-                  <button onClick={() => removeCategory(id)}
-                    className="md:hidden self-end text-rose-400 font-black text-[10px] uppercase">
+                  <button onClick={() => removeCategory(id)} className="md:hidden self-end text-rose-400 font-black text-[10px] uppercase">
                     Remove
                   </button>
                 </div>
@@ -342,7 +293,6 @@ const BudgetModal = ({ budgets, onSave, onClose }) => {
           })}
         </div>
 
-        {/* Footer */}
         <div className="p-6 md:p-8 bg-white border-t sticky bottom-0">
           <button onClick={handleSave} disabled={!isValid}
             className="w-full py-4 bg-slate-900 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em]
@@ -356,8 +306,7 @@ const BudgetModal = ({ budgets, onSave, onClose }) => {
   );
 };
 
-
-// ── Budget Card with Hover ────────────────────────────────────
+// ── Budget Card with Hover ────────────────────────────────────────────────
 const BudgetCard = ({ b }) => {
   const [hovered, setHovered] = useState(false);
   const accent = b.pct >= 100 ? '#ef4444' : b.pct >= 80 ? '#f97316' : '#10b981';
@@ -368,21 +317,16 @@ const BudgetCard = ({ b }) => {
       onMouseLeave={() => setHovered(false)}
       style={{
         position: 'relative', overflow: 'hidden',
-        background: hovered
-          ? `linear-gradient(135deg, white 60%, ${accent}06 100%)`
-          : 'white',
+        background: hovered ? `linear-gradient(135deg, white 60%, ${accent}06 100%)` : 'white',
         borderRadius: '1.5rem',
         border: `1.5px solid ${hovered ? accent + '35' : '#f1f5f9'}`,
-        boxShadow: hovered
-          ? `0 24px 48px -12px ${accent}30, 0 0 0 1px ${accent}12`
-          : '0 2px 8px rgba(0,0,0,0.04)',
+        boxShadow: hovered ? `0 24px 48px -12px ${accent}30, 0 0 0 1px ${accent}12` : '0 2px 8px rgba(0,0,0,0.04)',
         transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
         transition: 'all 0.3s cubic-bezier(0.34,1.3,0.64,1)',
         padding: '20px 24px',
         cursor: 'default',
       }}
     >
-      {/* Sliding accent bar — top */}
       <div style={{
         position: 'absolute', top: 0, left: 0,
         height: '3px', borderRadius: '99px',
@@ -390,8 +334,6 @@ const BudgetCard = ({ b }) => {
         width: hovered ? '100%' : '0%',
         transition: 'width 0.35s cubic-bezier(0.4,0,0.2,1)',
       }} />
-
-      {/* Decorative circle bg */}
       <div style={{
         position: 'absolute', top: '-20px', right: '-20px',
         width: '90px', height: '90px', borderRadius: '50%',
@@ -401,8 +343,6 @@ const BudgetCard = ({ b }) => {
         transition: 'all 0.3s ease',
         pointerEvents: 'none',
       }} />
-
-      {/* Top row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
         <div>
           <h4 style={{
@@ -427,13 +367,9 @@ const BudgetCard = ({ b }) => {
             transition: 'color 0.25s ease',
             letterSpacing: '-0.02em',
           }}>{formatCurrency(b.spent)}</div>
-          <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700 }}>
-            of {formatCurrency(b.limit)}
-          </div>
+          <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700 }}>of {formatCurrency(b.limit)}</div>
         </div>
       </div>
-
-      {/* Progress bar — grows taller + glows on hover */}
       <div style={{
         height: hovered ? '10px' : '7px', background: '#f1f5f9',
         borderRadius: '99px', overflow: 'hidden', marginBottom: '10px',
@@ -447,17 +383,13 @@ const BudgetCard = ({ b }) => {
           transition: 'box-shadow 0.25s ease',
         }} />
       </div>
-
-      {/* Bottom row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{
           fontSize: '10px', fontWeight: 900,
           color: b.remaining < 0 ? '#ef4444' : hovered ? '#64748b' : '#94a3b8',
           transition: 'color 0.2s ease',
         }}>
-          {b.remaining < 0
-            ? `Over by ${formatCurrency(Math.abs(b.remaining))}`
-            : `${formatCurrency(b.remaining)} remaining`}
+          {b.remaining < 0 ? `Over by ${formatCurrency(Math.abs(b.remaining))}` : `${formatCurrency(b.remaining)} remaining`}
         </span>
         <span style={{
           fontSize: '11px', fontWeight: 900,
@@ -473,7 +405,7 @@ const BudgetCard = ({ b }) => {
   );
 };
 
-// ── Main Budget Page ──────────────────────────────────────────
+// ── Main Budget Page ──────────────────────────────────────────────────────
 const BudgetPage = ({ transactions = [], budgets = [], setBudgets }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [modalOpen,   setModalOpen]   = useState(false);
@@ -485,30 +417,28 @@ const BudgetPage = ({ transactions = [], budgets = [], setBudgets }) => {
         .filter(t => t.type === 'expense' && t.category?.toLowerCase().trim() === name?.toLowerCase().trim())
         .reduce((s, t) => s + Number(t.amount || 0), 0);
       const pct    = cat.limit > 0 ? (spent / cat.limit) * 100 : 0;
-      const status = pct >= 100 ? { color: "bg-rose-500",   label: "Over Budget",  badge: "bg-rose-100 text-rose-600"   }
-                   : pct >= 80  ? { color: "bg-orange-500", label: "Warning",       badge: "bg-orange-100 text-orange-600" }
-                   : pct >= 50  ? { color: "bg-amber-400",  label: "On Track",      badge: "bg-amber-100 text-amber-600"   }
-                   :              { color: "bg-emerald-500", label: "Healthy",       badge: "bg-emerald-100 text-emerald-600" };
+      const status = pct >= 100 ? { color: "bg-rose-500",   label: "Over Budget", badge: "bg-rose-100 text-rose-600"     }
+                   : pct >= 80  ? { color: "bg-orange-500", label: "Warning",      badge: "bg-orange-100 text-orange-600" }
+                   : pct >= 50  ? { color: "bg-amber-400",  label: "On Track",     badge: "bg-amber-100 text-amber-600"   }
+                   :              { color: "bg-emerald-500", label: "Healthy",      badge: "bg-emerald-100 text-emerald-600" };
       return { ...cat, id: cat._id || cat.id, name, spent, pct, remaining: cat.limit - spent, ...status };
     });
   }, [transactions, budgets]);
 
-  // Summary stats
-  const totalAllocated = budgets.reduce((s, b)  => s + (b.limit || 0), 0);
+  const totalAllocated = budgets.reduce((s, b)   => s + (b.limit || 0), 0);
   const totalSpent     = budgetData.reduce((s, b) => s + b.spent, 0);
   const overCount      = budgetData.filter(b => b.pct >= 100).length;
-  const healthyCount   = budgetData.filter(b => b.pct < 80).length;
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans">
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} onBudgetUpdate={() => {}} />
 
       <main className="flex-1 overflow-y-auto">
-
-        {/* Header */}
         <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-emerald-100 px-4 lg:px-10 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 text-gray-600 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 text-gray-600 flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
             <div>
               <h2 className="text-lg md:text-xl font-black text-gray-900 tracking-tight">Budget Tracker</h2>
               <p className="text-[10px] text-emerald-600 font-black uppercase tracking-[0.15em]">Monthly Limits & Spending</p>
@@ -523,31 +453,23 @@ const BudgetPage = ({ transactions = [], budgets = [], setBudgets }) => {
         </header>
 
         <div className="p-4 lg:p-8 max-w-[1400px] mx-auto space-y-6">
-
-          {/* Summary Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "Total Allocated", value: formatCurrency(totalAllocated), icon: "wallet",  iconColor: "#3b82f6", accent: "#3b82f6" },
-              { label: "Total Spent",     value: formatCurrency(totalSpent),     icon: "spend",   iconColor: "#f43f5e", accent: "#f43f5e" },
-              { label: "Remaining",       value: formatCurrency(totalAllocated - totalSpent), icon: "check", iconColor: "#10b981", accent: "#10b981" },
-              { label: "Over Budget",     value: `${overCount} categories`,      icon: "warning", iconColor: "#f97316", accent: "#f97316" },
-            ].map(s => (
-              <StatSummaryCard key={s.label} s={s} />
-            ))}
+              { label: "Total Allocated", value: formatCurrency(totalAllocated),              icon: "wallet",  iconColor: "#3b82f6", accent: "#3b82f6" },
+              { label: "Total Spent",     value: formatCurrency(totalSpent),                  icon: "spend",   iconColor: "#f43f5e", accent: "#f43f5e" },
+              { label: "Remaining",       value: formatCurrency(totalAllocated - totalSpent), icon: "check",   iconColor: "#10b981", accent: "#10b981" },
+              { label: "Over Budget",     value: `${overCount} categories`,                   icon: "warning", iconColor: "#f97316", accent: "#f97316" },
+            ].map(s => <StatSummaryCard key={s.label} s={s} />)}
           </div>
 
-          {/* Main Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-            {/* Budget Cards — left */}
             <div className="lg:col-span-7 space-y-3">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">
-                {budgetData.length} Categories
-              </h3>
-
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">{budgetData.length} Categories</h3>
               {budgetData.length === 0 ? (
                 <div className="bg-white rounded-[2rem] border border-dashed border-slate-200 p-16 text-center">
-                  <div className="w-16 h-16 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-4"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v2m0 8v2"/><path d="M9 9.5c0-1.1.9-1.5 3-1.5s3 .9 3 2.5c0 2-3 2.5-3 4.5 0 1.1.4 1.5 3 1.5"/></svg></div>
+                  <div className="w-16 h-16 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v2m0 8v2"/><path d="M9 9.5c0-1.1.9-1.5 3-1.5s3 .9 3 2.5c0 2-3 2.5-3 4.5 0 1.1.4 1.5 3 1.5"/></svg>
+                  </div>
                   <div className="text-[16px] font-black text-slate-300 mb-2">No budgets set yet</div>
                   <div className="text-[12px] text-slate-300 mb-6">Set monthly limits to track your spending</div>
                   <button onClick={() => setModalOpen(true)}
@@ -556,30 +478,27 @@ const BudgetPage = ({ transactions = [], budgets = [], setBudgets }) => {
                   </button>
                 </div>
               ) : (
-                budgetData.map(b => (
-                  <BudgetCard key={b.id} b={b} />
-                ))
+                budgetData.map(b => <BudgetCard key={b.id} b={b} />)
               )}
             </div>
 
-            {/* Spending Chart — right */}
             <div className="lg:col-span-5">
               {budgetData.length > 0
                 ? <SpendingChart budgetData={budgetData} />
                 : (
                   <div className="bg-white rounded-[2rem] border border-dashed border-slate-200 p-12 text-center">
-                    <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
+                    <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                    </div>
                     <div className="text-[12px] font-black text-slate-300">Chart will appear once you have budgets and transactions</div>
                   </div>
                 )
               }
             </div>
-
           </div>
         </div>
       </main>
 
-      {/* Budget Modal */}
       {modalOpen && (
         <BudgetModal
           budgets={budgets}
