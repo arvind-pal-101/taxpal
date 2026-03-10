@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import API_URL from "../api";
 
-const Login = () => {
+// ✅ FIX: onLoginSuccess prop lo App.jsx se
+const Login = ({ onLoginSuccess }) => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,10 +31,16 @@ const Login = () => {
       });
       const data = await response.json();
       if (response.ok) {
+        // ✅ FIX: localStorage set karo aur App.jsx ko bhi batao token mila
         localStorage.setItem("token", data.accessToken);
         localStorage.setItem("userName", data.user.name);
         localStorage.setItem("userEmail", data.user.email);
-        setTimeout(() => navigate("/dashboard"), 100);
+
+        // ✅ Yeh line important hai — App.jsx ka token state update hoga
+        // Jis se bina refresh ke data turant load hoga
+        if (onLoginSuccess) onLoginSuccess(data.accessToken);
+
+        navigate("/dashboard");
       } else {
         setError(data.message || "Invalid credentials");
       }
