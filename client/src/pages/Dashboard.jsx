@@ -35,7 +35,7 @@ const BudgetSummary = ({ budgets = [], transactions = [] }) => {
 
       {budgets.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center py-10 text-center">
-          <div className="text-[40px] mb-3">💰</div>
+          <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v2m0 8v2"/><path d="M9 9.5c0-1.1.9-1.5 3-1.5s3 .9 3 2.5c0 2-3 2.5-3 4.5 0 1.1.4 1.5 3 1.5"/></svg></div>
           <p className="text-[12px] font-bold text-slate-300 mb-4">No budgets configured</p>
         </div>
       ) : (
@@ -84,7 +84,7 @@ const BudgetSummary = ({ budgets = [], transactions = [] }) => {
                   b.pct >= 100 ? 'bg-rose-500' : b.pct >= 80 ? 'bg-orange-400' : 'bg-emerald-500'}`} />
                 <span className="text-[11px] font-black text-slate-600 flex-1 truncate uppercase tracking-wide">{b.name}</span>
                 <span className={`text-[10px] font-black ${b.remaining < 0 ? 'text-rose-500' : 'text-slate-400'}`}>
-                  {b.remaining < 0 ? '⚠️ Over' : `${Math.round(b.pct)}%`}
+                  {b.remaining < 0 ? 'Over' : `${Math.round(b.pct)}%`}
                 </span>
               </div>
             ))}
@@ -142,7 +142,7 @@ const Dashboard = ({ transactions = [], budgets = [], onSaveTransaction }) => {
         {/* Header */}
         <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-emerald-100 p-4 lg:px-10 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-gray-600">☰</button>
+            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-gray-600 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
             <h2 className="text-lg md:text-xl font-black text-gray-900 tracking-tight">Dashboard Overview</h2>
           </div>
           <button

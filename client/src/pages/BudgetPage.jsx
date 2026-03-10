@@ -15,47 +15,169 @@ const SUGGESTED_CATEGORIES = [
   { label: "Health",         emoji: "💊" },
 ];
 
+// ── Summary Stat Card with Hover ─────────────────────────────
+const StatSummaryCard = ({ s }) => {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        position: 'relative',
+        borderRadius: '1.5rem',
+        background: hovered
+          ? `linear-gradient(135deg, white 0%, ${s.accent}08 100%)`
+          : 'white',
+        border: `1.5px solid ${hovered ? s.accent + '40' : '#f1f5f9'}`,
+        boxShadow: hovered
+          ? `0 20px 48px -12px ${s.accent}35, 0 0 0 1px ${s.accent}10`
+          : '0 2px 8px rgba(0,0,0,0.04)',
+        transform: hovered ? 'translateY(-5px) scale(1.02)' : 'translateY(0) scale(1)',
+        transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+        padding: '22px',
+        overflow: 'hidden',
+        cursor: 'default',
+      }}
+    >
+      {/* Glow blob behind icon */}
+      <div style={{
+        position: 'absolute', top: '-10px', right: '-10px',
+        width: '70px', height: '70px', borderRadius: '50%',
+        background: `radial-gradient(circle, ${s.accent}20 0%, transparent 70%)`,
+        opacity: hovered ? 1 : 0,
+        transition: 'opacity 0.3s ease',
+        pointerEvents: 'none',
+      }} />
+
+      {/* Icon */}
+      <div style={{
+        width: '40px', height: '40px', borderRadius: '12px', marginBottom: '14px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: hovered ? `${s.accent}20` : `${s.accent}12`,
+        boxShadow: hovered ? `0 4px 12px ${s.accent}30` : 'none',
+        transform: hovered ? 'scale(1.12) rotate(-4deg)' : 'scale(1) rotate(0deg)',
+        transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+      }}>
+        {s.icon === 'wallet'  && <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={s.iconColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="15" r="1" fill={s.iconColor}/></svg>}
+        {s.icon === 'spend'   && <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={s.iconColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>}
+        {s.icon === 'check'   && <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={s.iconColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+        {s.icon === 'warning' && <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={s.iconColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+      </div>
+
+      {/* Value */}
+      <div style={{
+        fontSize: '20px', fontWeight: 900,
+        color: hovered ? s.accent : '#0f172a',
+        letterSpacing: '-0.03em', lineHeight: 1.1,
+        transition: 'color 0.25s ease',
+        marginBottom: '4px',
+      }}>{s.value}</div>
+
+      {/* Label */}
+      <div style={{
+        fontSize: '10px', fontWeight: 800, letterSpacing: '0.14em',
+        textTransform: 'uppercase',
+        color: hovered ? s.accent + 'aa' : '#94a3b8',
+        transition: 'color 0.25s ease',
+      }}>{s.label}</div>
+
+      {/* Bottom accent line */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: '22px', right: '22px', height: '2px',
+        background: `linear-gradient(90deg, ${s.accent}, ${s.accent}00)`,
+        borderRadius: '99px',
+        opacity: hovered ? 1 : 0,
+        transform: hovered ? 'scaleX(1)' : 'scaleX(0)',
+        transformOrigin: 'left',
+        transition: 'opacity 0.3s ease, transform 0.3s ease',
+      }} />
+    </div>
+  );
+};
+
 // ── Spending Breakdown Chart ──────────────────────────────────
 const SpendingChart = ({ budgetData }) => {
+  const [hoveredRow, setHoveredRow] = useState(null);
   const total = budgetData.reduce((s, b) => s + b.spent, 0);
   if (!total) return null;
-
   const COLORS = ['#10b981','#3b82f6','#8b5cf6','#f59e0b','#ef4444','#06b6d4','#ec4899','#84cc16'];
 
   return (
     <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 md:p-8">
       <h3 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">Spending Breakdown</h3>
-      <h2 className="text-xl font-black text-slate-900 tracking-tight mb-4">Budget vs Spent</h2>
-      <p className="text-[10px] text-slate-400 font-bold mb-6">Progress bar shows % of budget limit used</p>
+      <h2 className="text-xl font-black text-slate-900 tracking-tight mb-1">Budget vs Spent</h2>
+      <p className="text-[10px] text-slate-400 font-bold mb-6">Hover each row to inspect</p>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
         {budgetData.filter(b => b.spent > 0).sort((a,b) => b.spent - a.spent).map((b, i) => {
           const pctOfLimit = b.limit > 0 ? Math.min((b.spent / b.limit) * 100, 100) : 0;
           const pctOfTotal = total > 0 ? (b.spent / total) * 100 : 0;
           const color = b.pct >= 100 ? '#ef4444' : b.pct >= 80 ? '#f97316' : COLORS[i % COLORS.length];
+          const isHov = hoveredRow === i;
           return (
-            <div key={b.id} className="flex items-center gap-3">
-              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-[12px] font-black text-slate-700 uppercase tracking-wide truncate">{b.name}</span>
-                  <div className="text-right ml-2 shrink-0">
-                    <span className="text-[12px] font-black text-slate-900">{formatCurrency(b.spent)}</span>
-                    <span className="text-[9px] text-slate-400 font-bold ml-1">/ {formatCurrency(b.limit)}</span>
-                  </div>
-                </div>
-                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${pctOfLimit}%`, background: color }} />
-                </div>
-                <div className="flex justify-between mt-1.5">
-                  <span className="text-[9px] text-slate-400 font-bold">
-                    {pctOfTotal.toFixed(0)}% of total spending
+            <div key={b.id}
+              onMouseEnter={() => setHoveredRow(i)}
+              onMouseLeave={() => setHoveredRow(null)}
+              style={{
+                padding: '10px 14px',
+                borderRadius: '14px',
+                background: isHov ? `${color}10` : 'transparent',
+                border: `1.5px solid ${isHov ? color + '30' : 'transparent'}`,
+                transform: isHov ? 'translateX(5px)' : 'translateX(0)',
+                boxShadow: isHov ? `0 4px 16px ${color}20` : 'none',
+                transition: 'all 0.22s cubic-bezier(0.34,1.2,0.64,1)',
+                cursor: 'default',
+              }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                {/* Colored dot — pulses on hover */}
+                <div style={{
+                  width: isHov ? '12px' : '8px', height: isHov ? '12px' : '8px',
+                  borderRadius: '50%', background: color, flexShrink: 0,
+                  boxShadow: isHov ? `0 0 0 4px ${color}25` : 'none',
+                  transition: 'all 0.22s ease',
+                }} />
+                <span style={{
+                  flex: 1, fontSize: '12px', fontWeight: 900, textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  color: isHov ? color : '#334155',
+                  transition: 'color 0.2s ease',
+                }}>{b.name}</span>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{
+                    fontSize: '13px', fontWeight: 900,
+                    color: isHov ? color : '#0f172a',
+                    transition: 'color 0.2s ease',
+                  }}>{formatCurrency(b.spent)}</span>
+                  <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 700, marginLeft: '4px' }}>
+                    / {formatCurrency(b.limit)}
                   </span>
-                  <span className={`text-[9px] font-black ${b.pct >= 100 ? 'text-rose-500' : b.pct >= 80 ? 'text-orange-500' : 'text-slate-400'}`}>
-                    {pctOfLimit.toFixed(0)}% of limit used
-                  </span>
                 </div>
+              </div>
+
+              {/* Progress bar — thicker + glowing on hover */}
+              <div style={{ height: isHov ? '8px' : '5px', background: '#f1f5f9', borderRadius: '99px',
+                overflow: 'hidden', transition: 'height 0.2s ease' }}>
+                <div style={{
+                  height: '100%', borderRadius: '99px',
+                  width: `${pctOfLimit}%`, background: color,
+                  boxShadow: isHov ? `0 0 8px ${color}80` : 'none',
+                  transition: 'all 0.5s ease, box-shadow 0.2s ease',
+                }} />
+              </div>
+
+              {/* Tooltip row — only on hover */}
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', marginTop: '6px',
+                maxHeight: isHov ? '20px' : '0px', overflow: 'hidden',
+                opacity: isHov ? 1 : 0,
+                transition: 'max-height 0.2s ease, opacity 0.2s ease',
+              }}>
+                <span style={{ fontSize: '9px', fontWeight: 700, color: color }}>
+                  {pctOfTotal.toFixed(0)}% of total spending
+                </span>
+                <span style={{ fontSize: '9px', fontWeight: 900, color: color }}>
+                  {pctOfLimit.toFixed(0)}% of limit used
+                </span>
               </div>
             </div>
           );
@@ -234,6 +356,123 @@ const BudgetModal = ({ budgets, onSave, onClose }) => {
   );
 };
 
+
+// ── Budget Card with Hover ────────────────────────────────────
+const BudgetCard = ({ b }) => {
+  const [hovered, setHovered] = useState(false);
+  const accent = b.pct >= 100 ? '#ef4444' : b.pct >= 80 ? '#f97316' : '#10b981';
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        position: 'relative', overflow: 'hidden',
+        background: hovered
+          ? `linear-gradient(135deg, white 60%, ${accent}06 100%)`
+          : 'white',
+        borderRadius: '1.5rem',
+        border: `1.5px solid ${hovered ? accent + '35' : '#f1f5f9'}`,
+        boxShadow: hovered
+          ? `0 24px 48px -12px ${accent}30, 0 0 0 1px ${accent}12`
+          : '0 2px 8px rgba(0,0,0,0.04)',
+        transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
+        transition: 'all 0.3s cubic-bezier(0.34,1.3,0.64,1)',
+        padding: '20px 24px',
+        cursor: 'default',
+      }}
+    >
+      {/* Sliding accent bar — top */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0,
+        height: '3px', borderRadius: '99px',
+        background: `linear-gradient(90deg, ${accent}, ${accent}60)`,
+        width: hovered ? '100%' : '0%',
+        transition: 'width 0.35s cubic-bezier(0.4,0,0.2,1)',
+      }} />
+
+      {/* Decorative circle bg */}
+      <div style={{
+        position: 'absolute', top: '-20px', right: '-20px',
+        width: '90px', height: '90px', borderRadius: '50%',
+        background: `radial-gradient(circle, ${accent}12 0%, transparent 70%)`,
+        opacity: hovered ? 1 : 0,
+        transform: hovered ? 'scale(1)' : 'scale(0.5)',
+        transition: 'all 0.3s ease',
+        pointerEvents: 'none',
+      }} />
+
+      {/* Top row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+        <div>
+          <h4 style={{
+            fontSize: '14px', fontWeight: 900, textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            color: hovered ? accent : '#1e293b',
+            transition: 'color 0.25s ease',
+          }}>{b.name}</h4>
+          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider mt-1 inline-block ${b.badge}`}>
+            {b.label}
+          </span>
+          {b.createdAt && (
+            <p className="text-[9px] text-slate-400 font-bold mt-1">
+              Created {new Date(b.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </p>
+          )}
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{
+            fontSize: '18px', fontWeight: 900,
+            color: hovered ? accent : '#0f172a',
+            transition: 'color 0.25s ease',
+            letterSpacing: '-0.02em',
+          }}>{formatCurrency(b.spent)}</div>
+          <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700 }}>
+            of {formatCurrency(b.limit)}
+          </div>
+        </div>
+      </div>
+
+      {/* Progress bar — grows taller + glows on hover */}
+      <div style={{
+        height: hovered ? '10px' : '7px', background: '#f1f5f9',
+        borderRadius: '99px', overflow: 'hidden', marginBottom: '10px',
+        transition: 'height 0.25s ease',
+      }}>
+        <div style={{
+          height: '100%', borderRadius: '99px',
+          width: `${Math.min(b.pct, 100)}%`,
+          background: `linear-gradient(90deg, ${accent}, ${accent}bb)`,
+          boxShadow: hovered ? `0 0 10px ${accent}70` : 'none',
+          transition: 'box-shadow 0.25s ease',
+        }} />
+      </div>
+
+      {/* Bottom row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{
+          fontSize: '10px', fontWeight: 900,
+          color: b.remaining < 0 ? '#ef4444' : hovered ? '#64748b' : '#94a3b8',
+          transition: 'color 0.2s ease',
+        }}>
+          {b.remaining < 0
+            ? `Over by ${formatCurrency(Math.abs(b.remaining))}`
+            : `${formatCurrency(b.remaining)} remaining`}
+        </span>
+        <span style={{
+          fontSize: '11px', fontWeight: 900,
+          color: hovered ? accent : '#94a3b8',
+          transition: 'color 0.25s ease',
+          background: hovered ? `${accent}12` : 'transparent',
+          padding: '2px 8px', borderRadius: '99px',
+        }}>
+          {Math.round(b.pct)}%
+        </span>
+      </div>
+    </div>
+  );
+};
+
 // ── Main Budget Page ──────────────────────────────────────────
 const BudgetPage = ({ transactions = [], budgets = [], setBudgets }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -269,7 +508,7 @@ const BudgetPage = ({ transactions = [], budgets = [], setBudgets }) => {
         {/* Header */}
         <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-emerald-100 px-4 lg:px-10 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 text-gray-600">☰</button>
+            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 text-gray-600 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
             <div>
               <h2 className="text-lg md:text-xl font-black text-gray-900 tracking-tight">Budget Tracker</h2>
               <p className="text-[10px] text-emerald-600 font-black uppercase tracking-[0.15em]">Monthly Limits & Spending</p>
@@ -288,16 +527,12 @@ const BudgetPage = ({ transactions = [], budgets = [], setBudgets }) => {
           {/* Summary Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "Total Allocated", value: formatCurrency(totalAllocated), icon: "💰", bg: "bg-blue-50",    text: "text-blue-700"    },
-              { label: "Total Spent",     value: formatCurrency(totalSpent),     icon: "💸", bg: "bg-rose-50",    text: "text-rose-700"    },
-              { label: "Remaining",       value: formatCurrency(totalAllocated - totalSpent), icon: "✅", bg: "bg-emerald-50", text: "text-emerald-700" },
-              { label: "Over Budget",     value: `${overCount} categories`,      icon: "⚠️", bg: "bg-orange-50",  text: "text-orange-700"  },
+              { label: "Total Allocated", value: formatCurrency(totalAllocated), icon: "wallet",  iconColor: "#3b82f6", accent: "#3b82f6" },
+              { label: "Total Spent",     value: formatCurrency(totalSpent),     icon: "spend",   iconColor: "#f43f5e", accent: "#f43f5e" },
+              { label: "Remaining",       value: formatCurrency(totalAllocated - totalSpent), icon: "check", iconColor: "#10b981", accent: "#10b981" },
+              { label: "Over Budget",     value: `${overCount} categories`,      icon: "warning", iconColor: "#f97316", accent: "#f97316" },
             ].map(s => (
-              <div key={s.label} className={`${s.bg} rounded-[1.5rem] p-5 border border-white shadow-sm`}>
-                <div className="text-2xl mb-2">{s.icon}</div>
-                <div className={`text-[18px] font-black ${s.text} tracking-tight leading-tight`}>{s.value}</div>
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{s.label}</div>
-              </div>
+              <StatSummaryCard key={s.label} s={s} />
             ))}
           </div>
 
@@ -312,7 +547,7 @@ const BudgetPage = ({ transactions = [], budgets = [], setBudgets }) => {
 
               {budgetData.length === 0 ? (
                 <div className="bg-white rounded-[2rem] border border-dashed border-slate-200 p-16 text-center">
-                  <div className="text-[48px] mb-4">💰</div>
+                  <div className="w-16 h-16 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-4"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v2m0 8v2"/><path d="M9 9.5c0-1.1.9-1.5 3-1.5s3 .9 3 2.5c0 2-3 2.5-3 4.5 0 1.1.4 1.5 3 1.5"/></svg></div>
                   <div className="text-[16px] font-black text-slate-300 mb-2">No budgets set yet</div>
                   <div className="text-[12px] text-slate-300 mb-6">Set monthly limits to track your spending</div>
                   <button onClick={() => setModalOpen(true)}
@@ -322,42 +557,7 @@ const BudgetPage = ({ transactions = [], budgets = [], setBudgets }) => {
                 </div>
               ) : (
                 budgetData.map(b => (
-                  <div key={b.id}
-                    className="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm p-5 md:p-6
-                               hover:shadow-md hover:border-emerald-100 transition-all duration-200">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h4 className="text-[14px] font-black text-slate-800 uppercase tracking-wide">{b.name}</h4>
-                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider mt-1 inline-block ${b.badge}`}>
-                          {b.label}
-                        </span>
-                        {b.createdAt && (
-                          <p className="text-[9px] text-slate-400 font-bold mt-1">
-                            Created {new Date(b.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <div className="text-[16px] font-black text-slate-900">{formatCurrency(b.spent)}</div>
-                        <div className="text-[10px] text-slate-400 font-bold">of {formatCurrency(b.limit)}</div>
-                      </div>
-                    </div>
-
-                    {/* Progress bar */}
-                    <div className="h-3 bg-slate-100 rounded-full overflow-hidden mb-2">
-                      <div className={`h-full rounded-full transition-all duration-700 ${b.color}`}
-                        style={{ width: `${Math.min(b.pct, 100)}%` }} />
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <span className={`text-[10px] font-black ${b.remaining < 0 ? 'text-rose-500 animate-pulse' : 'text-slate-400'}`}>
-                        {b.remaining < 0
-                          ? `⚠️ Over by ${formatCurrency(Math.abs(b.remaining))}`
-                          : `${formatCurrency(b.remaining)} remaining`}
-                      </span>
-                      <span className="text-[10px] font-black text-slate-400">{Math.round(b.pct)}%</span>
-                    </div>
-                  </div>
+                  <BudgetCard key={b.id} b={b} />
                 ))
               )}
             </div>
@@ -368,7 +568,7 @@ const BudgetPage = ({ transactions = [], budgets = [], setBudgets }) => {
                 ? <SpendingChart budgetData={budgetData} />
                 : (
                   <div className="bg-white rounded-[2rem] border border-dashed border-slate-200 p-12 text-center">
-                    <div className="text-[40px] mb-3">📊</div>
+                    <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
                     <div className="text-[12px] font-black text-slate-300">Chart will appear once you have budgets and transactions</div>
                   </div>
                 )

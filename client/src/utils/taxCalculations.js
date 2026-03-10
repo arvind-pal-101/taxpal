@@ -31,10 +31,10 @@ export const OLD_REGIME_SLABS = [
 
 // Quarterly advance tax schedule
 export const QUARTERS = [
-  { label: "Q1", full: "Q1 (Apr–Jun)", due: "15th June", pct: 0.15 },
-  { label: "Q2", full: "Q2 (Jul–Sep)", due: "15th Sept", pct: 0.45 },
-  { label: "Q3", full: "Q3 (Oct–Dec)", due: "15th Dec",  pct: 0.75 },
-  { label: "Q4", full: "Q4 (Jan–Mar)", due: "15th Mar",  pct: 1.00 },
+  { label: "Q1", full: "Q1 (Apr-Jun)", due: "15th June", pct: 0.15 },
+  { label: "Q2", full: "Q2 (Jul-Sep)", due: "15th Sept", pct: 0.45 },
+  { label: "Q3", full: "Q3 (Oct-Dec)", due: "15th Dec",  pct: 0.75 },
+  { label: "Q4", full: "Q4 (Jan-Mar)", due: "15th Mar",  pct: 1.00 },
 ];
 
 // ─────────────────────────────────────────────────────────

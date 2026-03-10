@@ -4,7 +4,8 @@ const jwt       = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 
 // ── Email transporter — created once at module level (not per-request) ──
-const transporter = nodemailer.createTransport({
+// NAYA (ye lagao)
+const getTransporter = () => nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
@@ -255,7 +256,7 @@ const forgotPassword = async (req, res) => {
 </body>
 </html>`;
 
-        await transporter.sendMail({
+        await getTransporter().sendMail({
             from:    `"TaxPal Security" <${process.env.EMAIL_USER}>`,
             to:      email,
             subject: `🔐 Your TaxPal Password Reset OTP`,
