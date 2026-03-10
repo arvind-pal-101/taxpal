@@ -12,6 +12,7 @@
     import ResetPassword  from "./pages/ResetPassword";
     import Reports        from "./pages/Reports";
     import TaxEstimatorPage from "./pages/TaxEstimatorPage";
+    import API_URL from "./api";
 
     // Extra Pages
     import BudgetPage from "./pages/BudgetPage";
@@ -21,8 +22,8 @@
     import TransactionModal   from "./components/TransactionModal";
     import TaxCalendar        from "./components/TaxCalendar";
 
-    const API_URL    = "http://localhost:5000/api/transactions";
-    const BUDGET_URL = "http://localhost:5000/api/budgets";
+    const API_URL_T = `${API_URL}/api/transactions`;
+const BUDGET_URL = `${API_URL}/api/budgets`;
 
     function App() {
       const [transactions,       setTransactions]       = useState([]);
