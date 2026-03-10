@@ -4,8 +4,10 @@ import Sidebar from '../components/Sidebar';
 import axios from 'axios';
 import { formatCurrency } from '../utils/financeHelpers';
 import { calculateSalariedTax, calculateBusinessTax, QUARTERS } from '../utils/taxCalculations';
+import BASE_URL from "../config";
 
-const API = "http://localhost:5000";
+
+const API = "BASE_URL";
 
 const CAT_COLORS = [
   "#10b981","#3b82f6","#f59e0b","#8b5cf6",

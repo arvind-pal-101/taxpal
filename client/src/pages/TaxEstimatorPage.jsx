@@ -6,6 +6,7 @@ import {
   calculateBusinessTax, calculateSalariedTax, calculatePenalty, compareRegimes,
 } from '../utils/taxCalculations';
 import { formatCurrency } from '../utils/financeHelpers';
+import BASE_URL from '../config';
 
 const fmt = (n) => formatCurrency(Math.round(n || 0));
 
@@ -211,7 +212,7 @@ const TaxEstimatorPage = ({ transactions = [] }) => {
       if (!token) { setSaveStatus('error'); return; }
 
       await axios.post(
-        'http://localhost:5000/api/taxes/save',
+        `${BASE_URL}/api/taxes/save`,
         {
           country,
           regime,

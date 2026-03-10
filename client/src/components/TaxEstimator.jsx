@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { formatCurrency } from '../utils/financeHelpers';
 import { QUARTERS } from '../utils/taxCalculations';
+import BASE_URL from '../config';
 
 const fmt = (n) => formatCurrency(Math.round(n || 0));
 
@@ -45,7 +46,7 @@ const TaxEstimator = ({ isDashboard = true }) => {
     const token = localStorage.getItem('token');
     if (!token) { setLoading(false); return; }
 
-    axios.get('http://localhost:5000/api/taxes/latest', {
+    axios.get(`${BASE_URL}/api/taxes/latest`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => { setTax(res.data); setLoading(false); })
