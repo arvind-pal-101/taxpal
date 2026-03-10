@@ -1,10 +1,13 @@
 const bcrypt    = require("bcryptjs");
 const User      = require("../models/User");
 const jwt       = require("jsonwebtoken");
-const nodemailer = require("nodemailer");
+//const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
+
 
 // ── Email transporter — created once at module level (not per-request) ──
 // NAYA (ye lagao)
+{/*
 const getTransporter = () => nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
@@ -13,7 +16,9 @@ const getTransporter = () => nodemailer.createTransport({
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     }
-});
+}); */}
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 
 // ── JWT helper — throws if env vars missing ──────────────────────────────
 const signAccess  = (payload) => jwt.sign(payload, process.env.JWT_SECRET,         { expiresIn: '1d'  });
@@ -258,13 +263,12 @@ const forgotPassword = async (req, res) => {
 </body>
 </html>`;
 
-        await getTransporter().sendMail({
-            from:    `"TaxPal Security" <${process.env.EMAIL_USER}>`,
-            to:      email,
-            subject: `🔐 Your TaxPal Password Reset OTP`,
-            text:    `Hi ${user.name},\n\nYour TaxPal password reset OTP is: ${otp}\n\nValid for 60 minutes. Never share this OTP.\n\n— TaxPal Security Team`,
-            html:    htmlEmail,
-        });
+        await resend.emails.send({
+    from: 'TaxPal Security <onboarding@resend.dev>',
+    to: email,
+    subject: `🔐 Your TaxPal Password Reset OTP`,
+    html: htmlEmail,
+});
 
         res.status(200).json({ message: "OTP sent to your email!" });
     } catch (error) {
