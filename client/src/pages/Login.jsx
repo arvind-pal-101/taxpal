@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-<<<<<<< HEAD
 import {Eye,EyeOff} from "lucide-react";
-=======
 import BASE_URL from "../config";
->>>>>>> bb7f20e7b0fbee79cdc0947817151f4a1087a74b
 
 const Login = ({ onLoginSuccess }) => {
   const [formData, setFormData] = useState({ email: "", password: "" });
