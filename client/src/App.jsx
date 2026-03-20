@@ -13,6 +13,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword  from "./pages/ResetPassword";
 import Reports        from "./pages/Reports";
 import TaxEstimatorPage from "./pages/TaxEstimatorPage";
+import OAuthCallback  from "./pages/OAuthCallback";
 
 // Extra Pages
 import BudgetPage from "./pages/BudgetPage";
@@ -108,6 +109,7 @@ function App() {
           <Route path="/register"        element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password"  element={<ResetPassword />} />
+          <Route path="/oauth-callback"  element={<OAuthCallback onLoginSuccess={handleLoginSuccess} />} />
 
           <Route path="/dashboard" element={
             <Dashboard

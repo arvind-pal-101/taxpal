@@ -16,7 +16,17 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: false,
+      default: null,
+    },
+    googleId: {
+      type: String,
+      default: null,
+    },
+    authProvider: {
+      type: String,
+      enum: ['local', 'google'],
+      default: 'local',
     },
     country: {
       type: String,
@@ -25,11 +35,13 @@ const userSchema = new mongoose.Schema(
     },
     income_bracket: {
       type: Number,
-      required: true,
+      required: false,
+      default: 0,
     },
     currency: {
       type: String,
-      required: true,
+      required: false,
+      default: '₹',
     },
     otp: {
       type: String,

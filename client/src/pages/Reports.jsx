@@ -5,9 +5,12 @@ import axios from 'axios';
 import { formatCurrency } from '../utils/financeHelpers';
 import { calculateSalariedTax, calculateBusinessTax, QUARTERS } from '../utils/taxCalculations';
 import BASE_URL from "../config";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 
-const API = "BASE_URL";
+
+const API = BASE_URL;
 
 const CAT_COLORS = [
   "#10b981","#3b82f6","#f59e0b","#8b5cf6",
@@ -115,6 +118,141 @@ function doExport(tab, filtered, label, budgets, taxpayerType, regime = 'new') {
     });
     dl(rows.length ? rows : [{ Category:'No budgets', Allocated:'₹0', Spent:'₹0', Remaining:'₹0', Status:'-' }],
       ['Category','Allocated','Spent','Remaining','Status'], `TaxPal_Budget_${label}.csv`);
+  }
+}
+
+function exportPDF(tab, filtered, label, budgets, taxpayerType, regime = "new") {
+  const doc = new jsPDF();
+  const inr = (num) => `Rs. ${Number(Math.round(num)).toLocaleString("en-IN")}`;
+
+  const income = filtered.filter(t => t.type === "income");
+  const expense = filtered.filter(t => t.type === "expense");
+
+  const totInc = income.reduce((s, t) => s + t.amount, 0);
+  const totExp = expense.reduce((s, t) => s + t.amount, 0);
+
+  const estTax =
+    taxpayerType === "Business"
+      ? calculateBusinessTax(totInc, totExp, regime).totalTax
+      : calculateSalariedTax(totInc, 0, {}, regime).totalTax;
+
+  doc.setFontSize(18);
+  doc.setTextColor(0,0,0);
+  doc.text("TaxPal Financial Report", 14, 18);
+  
+  doc.setFontSize(10);
+  doc.setTextColor(0,0,0);
+  doc.text(`Generated on: ${new Date().toLocaleDateString("en-IN")}`, 14, 24);
+
+  doc.setFontSize(10);
+  doc.text(`Period: ${label}`, 14, 30);
+  doc.text(`Taxpayer Type: ${taxpayerType}`, 14, 36);
+  doc.text(`Regime: ${regime === "new" ? "New Regime" : "Old Regime"}`, 14, 42);
+
+  if (tab === "income") {
+    autoTable(doc, {
+      startY: 45,
+      head: [["Date", "Description", "Category", "Amount"]],
+      body: income.map(t => [
+        new Date(t.date).toLocaleDateString("en-IN"),
+        t.desc || "",
+        t.category,
+        inr(t.amount),
+      ]),
+    });
+
+    doc.save(`TaxPal_Income_${label}.pdf`);
+  }
+
+  else if (tab === "expense") {
+    autoTable(doc, {
+      startY: 45,
+      head: [["Date", "Description", "Category", "Amount"]],
+      body: expense.map(t => [
+        new Date(t.date).toLocaleDateString("en-IN"),
+        t.desc || "",
+        t.category,
+        inr(t.amount),
+      ]),
+    });
+    doc.save(`TaxPal_Expense_${label}.pdf`);
+  }
+
+    else if (tab === "vs") {
+
+  const monthly = {};
+
+  filtered.forEach(t => {
+    const month = new Date(t.date).toLocaleDateString("en-IN", {
+      month: "short",
+      year: "numeric"
+    });
+
+    if (!monthly[month]) {
+      monthly[month] = { income: 0, expense: 0 };
+    }
+
+    if (t.type === "income") monthly[month].income += t.amount;
+    else monthly[month].expense += t.amount;
+  });
+
+  const rows = Object.entries(monthly).map(([month, data]) => [
+    month,
+    inr(data.income),
+    inr(data.expense),
+    inr(data.income - data.expense)
+  ]);
+
+  autoTable(doc, {
+    startY: 45,
+    head: [["Month", "Income", "Expense", "Net Savings"]],
+    body: rows,
+  });
+
+  doc.save(`TaxPal_IncomeVsExpense_${label}.pdf`);
+}
+
+else if (tab === "budget") {
+
+  const rows = budgets.map(b => {
+
+    const spent = expense
+      .filter(t => t.category === (b.name || b.category))
+      .reduce((s, t) => s + t.amount, 0);
+
+    const allocated = b.amount || b.limit || 0;
+
+    return [
+      b.name || b.category,
+      inr(allocated),
+      inr(spent),
+      inr(allocated - spent),
+      spent > allocated ? "OVER BUDGET" : "OK"
+    ];
+  });
+
+  autoTable(doc, {
+    startY: 45,
+    head: [["Category", "Allocated", "Spent", "Remaining", "Status"]],
+    body: rows,
+  });
+
+  doc.save(`TaxPal_BudgetReport_${label}.pdf`);
+}
+
+  else if (tab === "tax") {
+    autoTable(doc, {
+      startY: 45,
+      head: [["Field", "Value"]],
+      body: [
+        ["Total Income", inr(totInc)],
+        ["Total Expenses", inr(totExp)],
+        ["Estimated Tax", inr(estTax)],
+        ["In-Hand Income", inr(totInc - estTax)],
+      ],
+    });
+
+    doc.save(`TaxPal_TaxReport_${label}.pdf`);
   }
 }
 
@@ -495,14 +633,19 @@ const Reports = ({ transactions: propTxns = [], budgets: propBudgets = [] }) => 
           {/* ── Filter + Export Bar ── */}
           <div className="bg-white rounded-2xl p-4 border border-gray-50 shadow-sm flex items-center justify-between flex-wrap gap-3">
             <FilterBar mode={mode} setMode={setMode} year={year} setYear={setYear} month={month} setMonth={setMonth} day={day} setDay={setDay}/>
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1">{badge}</span>
-              <button
-                onClick={() => doExport(activeTab, filtered, fileLabel, budgets, taxpayerType, regime)}
-                className="flex items-center gap-2 bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200 active:scale-95">
-                ↓ Export CSV
-              </button>
-            </div>
+           <div className="flex items-center gap-3">
+            <button onClick={() => doExport(activeTab, filtered, fileLabel, budgets, taxpayerType, regime)}
+              className="flex items-center gap-2 bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase 
+              border border-emerald-400 transition-all duration-300 hover:bg-emerald-600 hover:shadow-[0_0_15px_rgba(16,185,129,0.8)] hover:ring-2 hover:ring-emerald-300">
+             ↓ Export CSV
+            </button>
+
+            <button onClick={() => exportPDF(activeTab, filtered, fileLabel, budgets, taxpayerType, regime)}
+              className="flex items-center gap-2 bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase 
+              border border-emerald-400 transition-all duration-300 hover:bg-emerald-600 hover:shadow-[0_0_15px_rgba(16,185,129,0.8)] hover:ring-2 hover:ring-emerald-300">
+             📄 Export PDF
+            </button>
+           </div>
           </div>
 
           {/* ════════════════════════════════════════

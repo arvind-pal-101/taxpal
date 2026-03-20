@@ -1,5 +1,7 @@
-const express = require('express');
+const express    = require('express');
 const { body, validationResult } = require('express-validator');
+const jwt        = require('jsonwebtoken');
+const { passport, googleEnabled } = require('../config/passport');
 const {
     loginUser,
     registerUser,
@@ -19,6 +21,77 @@ const validate = (checks) => async (req, res, next) => {
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
     next();
 };
+
+const makeTokensAndRedirect = (user, res, extraParams = '') => {
+    const accessToken = jwt.sign(
+        { id: user._id, name: user.name, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: '1d' }
+    );
+    const newRefreshToken = jwt.sign(
+        { id: user._id },
+        process.env.JWT_REFRESH_SECRET,
+        { expiresIn: '7d' }
+    );
+    user.refreshToken = newRefreshToken;
+    user.save().catch(e => console.error('Save refreshToken error:', e));
+
+    const clientURL = process.env.CLIENT_URL || 'http://localhost:5173';
+    res.redirect(
+        `${clientURL}/oauth-callback?accessToken=${accessToken}&refreshToken=${newRefreshToken}&name=${encodeURIComponent(user.name)}&email=${encodeURIComponent(user.email)}${extraParams}`
+    );
+};
+
+if (googleEnabled) {
+
+    // ── Google LOGIN (existing users only) ───────────────────
+    router.get('/google/login',
+        passport.authenticate('google-login', { scope: ['profile', 'email'], session: false })
+    );
+
+    router.get('/google/login/callback',
+        (req, res, next) => {
+            passport.authenticate('google-login', { session: false }, (err, user, info) => {
+                if (err) {
+                    console.error('❌ Google login error:', err);
+                    return res.redirect(`${process.env.CLIENT_URL}/login?error=oauth_error`);
+                }
+                if (!user) {
+                    // No account found — redirect back with clear message
+                    console.log('❌ Google login: no account found');
+                    return res.redirect(`${process.env.CLIENT_URL}/login?error=no_account`);
+                }
+                console.log('✅ Google login success for:', user.email);
+                makeTokensAndRedirect(user, res);
+            })(req, res, next);
+        }
+    );
+
+    // ── Google REGISTER (create new users) ───────────────────
+    router.get('/google/register',
+        passport.authenticate('google-register', { scope: ['profile', 'email'], session: false })
+    );
+
+    router.get('/google/register/callback',
+        (req, res, next) => {
+            passport.authenticate('google-register', { session: false }, (err, user, info) => {
+                if (err) {
+                    console.error('❌ Google register error:', err);
+                    return res.redirect(`${process.env.CLIENT_URL}/register?error=oauth_error`);
+                }
+                if (!user) {
+                    return res.redirect(`${process.env.CLIENT_URL}/register?error=oauth_failed`);
+                }
+                console.log('✅ Google register success for:', user.email);
+                makeTokensAndRedirect(user, res);
+            })(req, res, next);
+        }
+    );
+
+} else {
+    router.get('/google/login',    (req, res) => res.status(503).json({ message: 'Google OAuth not configured.' }));
+    router.get('/google/register', (req, res) => res.status(503).json({ message: 'Google OAuth not configured.' }));
+}
 
 // ── Register ────────────────────────────────────────────────
 router.post('/register',
@@ -57,7 +130,7 @@ router.post('/verify-otp',
     verifyOTPAndResetPassword
 );
 
-// ── Update Profile (name only) ──────────────────────────────
+// ── Update Profile ──────────────────────────────────────────
 router.put('/update-profile', protect,
     validate([body('name').notEmpty().withMessage('Name is required')]),
     async (req, res) => {
