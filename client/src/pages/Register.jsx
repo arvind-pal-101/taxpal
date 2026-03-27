@@ -85,7 +85,8 @@ const Register = () => {
         return;
       }
       navigate("/login");
-    } catch (error) {
+    } 
+    catch (error) {
       setErrors({ submit: "Connection error. Server is down." });
       setLoading(false);
     }
