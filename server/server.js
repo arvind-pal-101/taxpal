@@ -1,54 +1,42 @@
-const express = require("express");
-const cors = require("cors");
-const dotenv = require('dotenv');
-const connectDB = require('./config/db');
-const authRoutes = require('./routes/authRoutes');
-const protect = require('./middleware/authMiddleware');
-const errorHandler = require('./middleware/errorHandler');
-const transactionRoutes = require('./routes/transactionRoutes');
-const budgetRoutes = require('./routes/budgetRoutes');
-const taxRoutes = require('./routes/taxRoutes');
+require('dotenv').config(); // ← MUST be first
 
-dotenv.config();
+const express    = require("express");
+const cors       = require("cors");
+const { passport } = require('./config/passport'); // Load Google OAuth strategy
+const connectDB  = require('./config/db');
+const authRoutes = require('./routes/authRoutes');
+const protect    = require('./middleware/authMiddleware');
+const errorHandler    = require('./middleware/errorHandler');
+const transactionRoutes = require('./routes/transactionRoutes');
+const budgetRoutes    = require('./routes/budgetRoutes');
+const taxRoutes       = require('./routes/taxRoutes');
 
 connectDB();
 
 const app = express();
 
-// Middlewares
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true,
+}));
 app.use(express.json());
+app.use(passport.initialize());
 
-// Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth',         authRoutes);
 app.use('/api/transactions', transactionRoutes);
-app.use('/api/budgets', budgetRoutes); 
-app.use('/api/taxes', taxRoutes);
+app.use('/api/budgets',      budgetRoutes);
+app.use('/api/taxes',        taxRoutes);
 
-// Test Routes
-app.get("/", (req, res) => {
-  res.send("TaxPal Backend Running 🚀");
-});
+app.get("/", (req, res) => res.send("TaxPal Backend Running 🚀"));
 
-// Protected Route
 app.get("/api/protected", protect, (req, res) => {
   res.json({ message: "You accessed protected route", user: req.user });
 });
 
-// Error Handler
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
-const server = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
-process.on('unhandledRejection', (reason) => {
-  console.error(`Unhandled Rejection: ${reason}`);
-});
-
-process.on('uncaughtException', (err) => {
-  console.error(`Uncaught Exception: ${err.message}`);
-  process.exit(1);
-});
+process.on('unhandledRejection', (reason) => console.error(`Unhandled Rejection: ${reason}`));
+process.on('uncaughtException',  (err)    => { console.error(`Uncaught Exception: ${err.message}`); process.exit(1); });
