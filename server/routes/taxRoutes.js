@@ -60,4 +60,33 @@ router.get("/latest", protect, async (req, res) => {
   }
 });
 
+// ------- PATCH /api/taxes/mark-paid/:quarter ---------
+// Mark a quarter as paid
+router.patch("/mark-paid/:quarter", protect, async (req, res) => {
+  try {
+    const { quarter } = req.params; // Q1, Q2, Q3, Q4
+
+    // Validate quarter
+    if (!["Q1", "Q2", "Q3", "Q4"].includes(quarter)) {
+      return res.status(400).json({ message: "Invalid quarter" });
+    }
+
+    const update = {};
+    update[`quarterlyStatus.${quarter}`] = "paid";
+
+    const tax = await Tax.findOneAndUpdate(
+      { user: req.user._id || req.user.id },
+      { $set: update },
+      { new: true }
+    );
+
+    if (!tax) return res.status(404).json({ message: "No tax data found. Save to Profile first." });
+
+    res.json({ success: true, quarterlyStatus: tax.quarterlyStatus });
+  } catch (err) {
+    console.error("Mark paid error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 module.exports = router;

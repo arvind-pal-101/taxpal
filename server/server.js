@@ -8,6 +8,7 @@ const errorHandler = require("./middleware/errorHandler");
 const transactionRoutes = require("./routes/transactionRoutes");
 const budgetRoutes = require("./routes/budgetRoutes");
 const taxRoutes = require("./routes/taxRoutes");
+const reportRoutes = require("./routes/reportRoutes");
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/budgets", budgetRoutes);
 app.use("/api/taxes", taxRoutes);
+app.use("/api/reports", reportRoutes);
 
 // Test Routes
 app.get("/", (req, res) => {

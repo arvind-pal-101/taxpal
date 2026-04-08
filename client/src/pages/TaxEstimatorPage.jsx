@@ -332,6 +332,21 @@ const TaxEstimatorPage = ({ transactions = [] }) => {
     }
   }, [autoIncome]);
 
+  // Fetch quarterly status from DB on mount
+useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+  axios.get(`${BASE_URL}/api/taxes/latest`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  .then(r => {
+    if (r.data?.quarterlyStatus) {
+      setQuarterlyStatus(r.data.quarterlyStatus);
+    }
+  })
+  .catch(() => {});
+}, []);
+
   const salResult = useMemo(() => {
     const g = Number(salGross);
     if (!g) return null;
@@ -480,6 +495,29 @@ const TaxEstimatorPage = ({ transactions = [] }) => {
       setTimeout(() => setSaveStatus("idle"), 3000);
     }
   };
+
+  const handleMarkPaid = async (quarter) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const res = await axios.patch(
+      `${BASE_URL}/api/taxes/mark-paid/${quarter}`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (res.data?.quarterlyStatus) {
+      setQuarterlyStatus(res.data.quarterlyStatus);
+    }
+  } catch (err) {
+    console.error("Mark paid error:", err);
+    alert("Please save to profile first!");
+  }
+};
+
+  // existing states ke baad add karo
+const [quarterlyStatus, setQuarterlyStatus] = useState({
+  Q1: "pending", Q2: "pending", Q3: "pending", Q4: "pending"
+});
 
   return (
     <div
@@ -1484,15 +1522,24 @@ const TaxEstimatorPage = ({ transactions = [] }) => {
                                     {fmt(inst)}
                                   </div>
                                 </div>
-                                <div className="h-[3px] bg-slate-100 rounded-full">
-                                  <div
-                                    className="h-full rounded-full"
-                                    style={{
-                                      background: cc,
-                                      width: `${q.pct * 100}%`,
-                                    }}
-                                  />
-                                </div>
+                                {/* ✅ Mark as Paid Button */}
+<button
+  onClick={() => handleMarkPaid(q.label)}
+  className="w-full mt-2 py-[7px] rounded-[8px] text-[9px] font-bold transition-all border-none cursor-pointer"
+  style={{
+    background: quarterlyStatus[q.label] === "paid"
+      ? "#dcfce7"
+      : `${cc}18`,
+    color: quarterlyStatus[q.label] === "paid"
+      ? "#16a34a"
+      : cc,
+    border: `1px solid ${quarterlyStatus[q.label] === "paid" ? "#86efac" : `${cc}40`}`
+  }}
+>
+  {quarterlyStatus[q.label] === "paid"
+    ? "✓ Paid"
+    : "Mark as Paid"}
+</button>
                               </div>
                             </div>
                           );

@@ -18,6 +18,15 @@ const taxSchema = new mongoose.Schema({
   remainingTax: { type: Number, default: 0 },
   refund: { type: Number, default: 0 },
   effectiveRate: { type: String, default: "0.00" },
+  quarter: { type: String, default: "Q1" }, // already added
+  quarterlyStatus: {
+    Q1: { type: String, enum: ["pending", "paid"], default: "pending" },
+    Q2: { type: String, enum: ["pending", "paid"], default: "pending" },
+    Q3: { type: String, enum: ["pending", "paid"], default: "pending" },
+    Q4: { type: String, enum: ["pending", "paid"], default: "pending" },
+  },
+  savedAt: { type: Date, default: Date.now },
+  quarter: { type: String, default: "Q1" },
   savedAt: { type: Date, default: Date.now },
 });
 

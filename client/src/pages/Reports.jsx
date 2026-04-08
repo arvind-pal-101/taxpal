@@ -10,7 +10,7 @@ import {
 } from "../utils/taxCalculations";
 import BASE_URL from "../config";
 
-const API = "BASE_URL";
+const API = BASE_URL;
 
 const CAT_COLORS = [
   "#10b981",
@@ -25,7 +25,7 @@ const CAT_COLORS = [
   "#6366f1",
 ];
 
-// Date Helpers
+// ─── Date Helpers ─────────────────────────────────────────────────────────────
 function getWeekBounds(year, month, day) {
   const ref = new Date(
     `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
@@ -72,7 +72,7 @@ function makePeriodLabel(mode, year, month, day) {
   return "";
 }
 function makeBadge(mode, year, month, day) {
-  const MSHORT = [
+  const M = [
     "Jan",
     "Feb",
     "Mar",
@@ -88,8 +88,8 @@ function makeBadge(mode, year, month, day) {
   ];
   const p = (n) => String(n).padStart(2, "0");
   if (mode === "year") return `Year ${year}`;
-  if (mode === "month") return `${MSHORT[+month - 1]} ${year}`;
-  if (mode === "day") return `${p(day)} ${MSHORT[+month - 1]} ${year}`;
+  if (mode === "month") return `${M[+month - 1]} ${year}`;
+  if (mode === "day") return `${p(day)} ${M[+month - 1]} ${year}`;
   if (mode === "week") {
     const { start, end } = getWeekBounds(year, month, day);
     return `${toYMD(start)} → ${toYMD(end)}`;
@@ -97,7 +97,7 @@ function makeBadge(mode, year, month, day) {
   return "";
 }
 
-// CSV Export
+// ─── CSV Export ───────────────────────────────────────────────────────────────
 function dl(rows, cols, filename) {
   if (!rows.length) {
     alert("No data for selected period.");
@@ -122,14 +122,13 @@ function doExport(tab, filtered, label, budgets, taxpayerType, regime = "new") {
   const expense = filtered.filter((t) => t.type === "expense");
   const totInc = income.reduce((s, t) => s + t.amount, 0);
   const totExp = expense.reduce((s, t) => s + t.amount, 0);
-
+  const inr = (n) => "₹" + Number(Math.round(n)).toLocaleString("en-IN");
   const estTax =
     taxpayerType === "Business"
       ? calculateBusinessTax(totInc, totExp, regime).totalTax
       : calculateSalariedTax(totInc, 0, {}, regime).totalTax;
 
   if (tab === "income") {
-    const inr = (n) => "₹" + Number(Math.round(n)).toLocaleString("en-IN");
     dl(
       income.map((t) => ({
         Date: t.date,
@@ -141,7 +140,6 @@ function doExport(tab, filtered, label, budgets, taxpayerType, regime = "new") {
       `TaxPal_Income_${label}.csv`,
     );
   } else if (tab === "expense") {
-    const inr = (n) => "₹" + Number(Math.round(n)).toLocaleString("en-IN");
     dl(
       expense.map((t) => ({
         Date: t.date,
@@ -153,7 +151,6 @@ function doExport(tab, filtered, label, budgets, taxpayerType, regime = "new") {
       `TaxPal_Expense_${label}.csv`,
     );
   } else if (tab === "vs") {
-    const inr = (n) => "₹" + Number(Math.round(n)).toLocaleString("en-IN");
     const byM = {};
     filtered.forEach((t) => {
       const m = t.date?.slice(0, 7) || "?";
@@ -186,9 +183,13 @@ function doExport(tab, filtered, label, budgets, taxpayerType, regime = "new") {
       `TaxPal_IncomeVsExpense_${label}.csv`,
     );
   } else if (tab === "tax") {
-    const inr = (n) => "₹" + Number(Math.round(n)).toLocaleString("en-IN");
+    // ✅ Original Field/Value format + quarterly breakdown at bottom
     const taxableInc =
       taxpayerType === "Business" ? Math.max(0, totInc - totExp) : totInc;
+    const quarterRows = QUARTERS.map((q) => ({
+      Field: `${q.label} Tax (${q.full}) — Due ${q.due}`,
+      Value: inr(Math.round(estTax * q.pct)),
+    }));
     dl(
       [
         { Field: "Period", Value: label },
@@ -206,12 +207,13 @@ function doExport(tab, filtered, label, budgets, taxpayerType, regime = "new") {
           Field: "Regime",
           Value: regime === "new" ? "New Regime" : "Old Regime",
         },
+        { Field: "─── Quarterly Breakdown ───", Value: "─────────" },
+        ...quarterRows,
       ],
       ["Field", "Value"],
       `TaxPal_TaxReport_${label}.csv`,
     );
   } else if (tab === "budget") {
-    const inr = (n) => "₹" + Number(Math.round(n)).toLocaleString("en-IN");
     const rows = (budgets || []).map((b) => {
       const spent = expense
         .filter((t) => t.category === (b.name || b.category))
@@ -243,7 +245,191 @@ function doExport(tab, filtered, label, budgets, taxpayerType, regime = "new") {
   }
 }
 
-// Charts
+// ─── PDF Export ───────────────────────────────────────────────────────────────
+function downloadPDF(tab, filtered, label, budgets, taxpayerType, regime) {
+  const income = filtered.filter((t) => t.type === "income");
+  const expense = filtered.filter((t) => t.type === "expense");
+  const totInc = income.reduce((s, t) => s + t.amount, 0);
+  const totExp = expense.reduce((s, t) => s + t.amount, 0);
+  const inr = (n) => "₹" + Number(Math.round(n)).toLocaleString("en-IN");
+  const estTax =
+    taxpayerType === "Business"
+      ? calculateBusinessTax(totInc, totExp, regime).totalTax
+      : calculateSalariedTax(totInc, 0, {}, regime).totalTax;
+
+  const tabTitles = {
+    income: "Income Report",
+    expense: "Expense Report",
+    vs: "Income vs Expense",
+    tax: "Tax Report",
+    budget: "Budget Report",
+  };
+  const headers = {
+    income: "<th>Date</th><th>Description</th><th>Category</th><th>Amount</th>",
+    expense:
+      "<th>Date</th><th>Description</th><th>Category</th><th>Amount</th>",
+    vs: "<th>Month</th><th>Income</th><th>Expense</th><th>Net Savings</th><th>Savings Rate</th>",
+    tax: "<th>Field</th><th>Value</th>",
+    budget:
+      "<th>Category</th><th>Allocated</th><th>Spent</th><th>Remaining</th><th>Status</th>",
+  };
+
+  let tableRows = "";
+
+  if (tab === "income") {
+    tableRows =
+      income
+        .map(
+          (t) =>
+            `<tr><td>${t.date}</td><td>${t.desc || ""}</td><td>${t.category}</td><td style="color:green;font-weight:bold">+${inr(t.amount)}</td></tr>`,
+        )
+        .join("") ||
+      `<tr><td colspan="4" class="empty">No income transactions</td></tr>`;
+  } else if (tab === "expense") {
+    tableRows =
+      expense
+        .map(
+          (t) =>
+            `<tr><td>${t.date}</td><td>${t.desc || ""}</td><td>${t.category}</td><td style="color:red;font-weight:bold">−${inr(t.amount)}</td></tr>`,
+        )
+        .join("") ||
+      `<tr><td colspan="4" class="empty">No expense transactions</td></tr>`;
+  } else if (tab === "vs") {
+    const byM = {};
+    filtered.forEach((t) => {
+      const m = t.date?.slice(0, 7) || "?";
+      if (!byM[m]) byM[m] = { i: 0, e: 0 };
+      byM[m][t.type === "income" ? "i" : "e"] += t.amount;
+    });
+    tableRows =
+      Object.entries(byM)
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([m, d]) => {
+          const net = d.i - d.e;
+          const rate =
+            d.i > 0 ? (((d.i - d.e) / d.i) * 100).toFixed(1) + "%" : "0%";
+          return `<tr>
+        <td>${m}</td><td style="color:green">${inr(d.i)}</td><td style="color:red">${inr(d.e)}</td>
+        <td style="font-weight:bold;color:${net >= 0 ? "green" : "red"}">${inr(net)}</td><td>${rate}</td>
+      </tr>`;
+        })
+        .join("") || `<tr><td colspan="5" class="empty">No data</td></tr>`;
+  } else if (tab === "tax") {
+    const taxableInc =
+      taxpayerType === "Business" ? Math.max(0, totInc - totExp) : totInc;
+    const qColors = ["#059669", "#3b82f6", "#8b5cf6", "#f59e0b"];
+    const quarterRows = QUARTERS.map(
+      (q, i) => `
+      <tr>
+        <td style="color:${qColors[i]};font-weight:bold">${q.label} — ${q.full}</td>
+        <td style="color:${qColors[i]};font-weight:bold">${inr(Math.round(estTax * q.pct))}</td>
+      </tr>
+      <tr style="background:#f8fafc">
+        <td style="font-size:11px;color:#94a3b8;padding-left:24px">Due Date</td>
+        <td style="font-size:11px;color:#94a3b8">${q.due}</td>
+      </tr>`,
+    ).join("");
+
+    tableRows = `
+      <tr><td>Period</td><td><strong>${label}</strong></td></tr>
+      <tr><td>Taxpayer Type</td><td><strong>${taxpayerType}</strong></td></tr>
+      <tr><td>Tax Regime</td><td><strong>${regime === "new" ? "New Regime" : "Old Regime"}</strong></td></tr>
+      <tr style="background:#f0fdf4"><td>Total Income</td><td style="color:green;font-weight:bold">${inr(totInc)}</td></tr>
+      <tr><td>Total Expenses</td><td style="color:red;font-weight:bold">${inr(totExp)}</td></tr>
+      <tr style="background:#f0fdf4"><td>Taxable Income</td><td style="font-weight:bold">${inr(taxableInc)}</td></tr>
+      <tr><td>Estimated Tax</td><td style="color:#d97706;font-weight:bold">${inr(estTax)}</td></tr>
+      <tr style="background:#f0fdf4"><td>Effective Tax Rate</td><td style="color:#3b82f6;font-weight:bold">${totInc > 0 ? ((estTax / totInc) * 100).toFixed(2) + "%" : "0%"}</td></tr>
+      <tr><td>In-Hand After Tax</td><td style="font-weight:bold">${inr(totInc - estTax)}</td></tr>
+      <tr><td colspan="2" style="background:#f0fdf4;font-weight:900;font-size:13px;padding:14px 16px;color:#065f46;letter-spacing:1px">📅 QUARTERLY TAX BREAKDOWN</td></tr>
+      ${quarterRows}`;
+  } else if (tab === "budget") {
+    tableRows =
+      (budgets || [])
+        .map((b) => {
+          const name = b.name || b.category || "";
+          const alloc = Number(b.amount || b.limit || 0);
+          const spent = expense
+            .filter((t) => t.category === name)
+            .reduce((s, t) => s + t.amount, 0);
+          const rem = alloc - spent;
+          const over = spent > alloc;
+          return `<tr>
+        <td style="font-weight:bold">${name}</td><td>${inr(alloc)}</td>
+        <td style="color:${over ? "red" : "inherit"}">${inr(spent)}</td>
+        <td style="color:${over ? "red" : "green"};font-weight:bold">${inr(rem)}</td>
+        <td><span style="background:${over ? "#fee2e2" : "#dcfce7"};color:${over ? "#dc2626" : "#16a34a"};padding:2px 8px;border-radius:999px;font-size:11px;font-weight:bold">${over ? "OVER" : "OK"}</span></td>
+      </tr>`;
+        })
+        .join("") ||
+      `<tr><td colspan="5" class="empty">No budgets found</td></tr>`;
+  }
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <title>TaxPal — ${tabTitles[tab]} — ${label}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;padding:36px;color:#1e293b;background:white}
+    .header{display:flex;align-items:center;gap:16px;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #e2e8f0}
+    .logo{background:#059669;color:white;font-weight:900;font-size:18px;padding:8px 18px;border-radius:10px;letter-spacing:-0.5px}
+    .logo span{color:#6ee7b7}
+    .title-block h1{font-size:22px;font-weight:900;color:#0f172a}
+    .title-block p{font-size:12px;color:#64748b;margin-top:3px}
+    .summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+    .summary-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px}
+    .summary-card .lbl{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+    .summary-card .val{font-size:18px;font-weight:900;color:#0f172a}
+    .green .val{color:#059669} .red .val{color:#e11d48} .amber .val{color:#d97706}
+    table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+    th{background:#f0fdf4;color:#065f46;padding:11px 14px;text-align:left;font-weight:800;border-bottom:2px solid #6ee7b7;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
+    td{padding:10px 14px;border-bottom:1px solid #f1f5f9}
+    tr:hover td{background:#f8fafc}
+    .empty{text-align:center;color:#cbd5e1;font-weight:700;padding:32px}
+    .footer{margin-top:32px;padding-top:16px;border-top:1px solid #f1f5f9;text-align:center;font-size:11px;color:#94a3b8}
+    @media print{body{padding:20px}}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">Tax<span>Pal</span></div>
+    <div class="title-block">
+      <h1>${tabTitles[tab]}</h1>
+      <p>Period: ${label} &nbsp;·&nbsp; Taxpayer: ${taxpayerType} &nbsp;·&nbsp; Regime: ${regime === "new" ? "New Regime" : "Old Regime"}</p>
+    </div>
+  </div>
+  ${
+    tab !== "tax"
+      ? `
+  <div class="summary-grid">
+    <div class="summary-card green"><div class="lbl">Total Income</div><div class="val">${inr(totInc)}</div></div>
+    <div class="summary-card red"><div class="lbl">Total Expenses</div><div class="val">${inr(totExp)}</div></div>
+    <div class="summary-card amber"><div class="lbl">Net Savings</div><div class="val">${inr(totInc - totExp)}</div></div>
+  </div>`
+      : ""
+  }
+  <table>
+    <thead><tr>${headers[tab]}</tr></thead>
+    <tbody>${tableRows}</tbody>
+  </table>
+  <div class="footer">
+    Generated by TaxPal &nbsp;·&nbsp; ${new Date().toLocaleDateString("en-IN", { dateStyle: "long" })}
+    &nbsp;·&nbsp; * Estimates only. Consult a CA for accurate tax filing.
+  </div>
+</body>
+</html>`;
+
+  const w = window.open("", "_blank");
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(() => {
+    w.print();
+  }, 600);
+}
+
+// ─── Charts ───────────────────────────────────────────────────────────────────
 function EmptyChart() {
   return (
     <div className="flex items-center justify-center h-36 text-[11px] font-black text-gray-200 uppercase tracking-widest">
@@ -258,17 +444,14 @@ function DonutChart({ slices }) {
   const R = 78,
     cx = 100,
     cy = 95;
-
-  // Build paths - special case: single slice = full circle (SVG arc can't draw 360°)
-  const paths = slices.map((s, i) => {
-    const pct = ((s.value / total) * 100).toFixed(1);
-    const color = s.color || CAT_COLORS[i % CAT_COLORS.length];
-    return { pct, label: s.label, color, value: s.value };
-  });
-
+  const paths = slices.map((s, i) => ({
+    pct: ((s.value / total) * 100).toFixed(1),
+    label: s.label,
+    color: s.color || CAT_COLORS[i % CAT_COLORS.length],
+    value: s.value,
+  }));
   const renderArcs = () => {
-    if (slices.length === 1) {
-      // Full circle - two semicircles to avoid SVG arc bug
+    if (slices.length === 1)
       return (
         <>
           <path
@@ -283,15 +466,14 @@ function DonutChart({ slices }) {
           />
         </>
       );
-    }
     let angle = -Math.PI / 2;
     return paths.map((p, i) => {
       const sweep = (slices[i].value / total) * 2 * Math.PI;
-      const x1 = cx + R * Math.cos(angle);
-      const y1 = cy + R * Math.sin(angle);
+      const x1 = cx + R * Math.cos(angle),
+        y1 = cy + R * Math.sin(angle);
       angle += sweep;
-      const x2 = cx + R * Math.cos(angle);
-      const y2 = cy + R * Math.sin(angle);
+      const x2 = cx + R * Math.cos(angle),
+        y2 = cy + R * Math.sin(angle);
       return (
         <path
           key={i}
@@ -304,7 +486,6 @@ function DonutChart({ slices }) {
       );
     });
   };
-
   return (
     <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
       <div className="w-[150px] sm:w-[170px] flex-shrink-0">
@@ -400,11 +581,11 @@ function BarChartSVG({ slices, colors }) {
         );
       })}
       {slices.map((s, i) => {
-        const x = pl + i * step + (step - bw) / 2;
-        const bh = (s.value / max) * (H - pt - pb);
-        const col = colors
-          ? colors[i % colors.length]
-          : CAT_COLORS[i % CAT_COLORS.length];
+        const x = pl + i * step + (step - bw) / 2,
+          bh = (s.value / max) * (H - pt - pb),
+          col = colors
+            ? colors[i % colors.length]
+            : CAT_COLORS[i % CAT_COLORS.length];
         return (
           <g key={i}>
             <rect
@@ -449,7 +630,6 @@ function BarChartSVG({ slices, colors }) {
   );
 }
 
-// Grouped Bar: Income vs Expense per month
 function GroupedBarChart({ data }) {
   if (!data.length) return <EmptyChart />;
   const max = Math.max(...data.flatMap((d) => [d.income, d.expense]), 1);
@@ -459,8 +639,8 @@ function GroupedBarChart({ data }) {
     pr = 10,
     pt = 10,
     pb = 42;
-  const groupW = (W - pl - pr) / data.length;
-  const bw = Math.min(22, groupW / 2 - 4);
+  const groupW = (W - pl - pr) / data.length,
+    bw = Math.min(22, groupW / 2 - 4);
   const toY = (v) => pt + ((max - v) / max) * (H - pt - pb);
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", maxHeight: H }}>
@@ -495,8 +675,8 @@ function GroupedBarChart({ data }) {
         );
       })}
       {data.map((d, i) => {
-        const cx = pl + i * groupW + groupW / 2;
-        const x1 = cx - bw - 2,
+        const cx = pl + i * groupW + groupW / 2,
+          x1 = cx - bw - 2,
           x2 = cx + 2;
         return (
           <g key={i}>
@@ -547,7 +727,6 @@ function GroupedBarChart({ data }) {
         stroke="#e2e8f0"
         strokeWidth="1"
       />
-      {/* Legend */}
       <rect
         x={pl}
         y={H - pb + 26}
@@ -586,7 +765,7 @@ function GroupedBarChart({ data }) {
   );
 }
 
-// Reusable UI
+// ─── Reusable UI ──────────────────────────────────────────────────────────────
 const MONTHS_FULL = [
   "January",
   "February",
@@ -612,10 +791,10 @@ function FilterBar({
   day,
   setDay,
 }) {
-  const now = new Date();
-  const years = Array.from({ length: 6 }, (_, i) => now.getFullYear() - i);
-  const daysInMonth = new Date(+year, +month, 0).getDate();
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const now = new Date(),
+    years = Array.from({ length: 6 }, (_, i) => now.getFullYear() - i);
+  const daysInMonth = new Date(+year, +month, 0).getDate(),
+    days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
@@ -625,8 +804,7 @@ function FilterBar({
         <button
           key={m}
           onClick={() => setMode(m)}
-          className={`px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all
-            ${mode === m ? "bg-gray-950 text-white shadow-md" : "bg-gray-100 text-gray-400 hover:bg-gray-200"}`}
+          className={`px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${mode === m ? "bg-gray-950 text-white shadow-md" : "bg-gray-100 text-gray-400 hover:bg-gray-200"}`}
         >
           {m.charAt(0).toUpperCase() + m.slice(1)}
         </button>
@@ -724,7 +902,7 @@ function TxnList({ txns, colorClass, sign }) {
   );
 }
 
-// MAIN COMPONENT
+// ─── Main Component ───────────────────────────────────────────────────────────
 const Reports = ({
   transactions: propTxns = [],
   budgets: propBudgets = [],
@@ -736,14 +914,12 @@ const Reports = ({
   const [taxpayerType, setTaxpayerType] = useState("Business");
   const [regime, setRegime] = useState("new");
   const [activeTab, setActiveTab] = useState("income");
-
   const now = new Date();
   const [mode, setMode] = useState("year");
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [day, setDay] = useState(now.getDate());
 
-  // Fetch transactions if not passed as props
   useEffect(() => {
     if (propTxns.length) {
       setTransactions(propTxns);
@@ -762,7 +938,6 @@ const Reports = ({
       .catch(() => {});
   }, [propTxns, navigate]);
 
-  // Fetch budgets if not passed as props
   useEffect(() => {
     if (propBudgets.length) {
       setBudgets(propBudgets);
@@ -778,7 +953,6 @@ const Reports = ({
       .catch(() => {});
   }, [propBudgets]);
 
-  // Filtered data
   const filtered = useMemo(
     () => filterTxns(transactions, mode, year, month, day),
     [transactions, mode, year, month, day],
@@ -791,7 +965,6 @@ const Reports = ({
     () => makeBadge(mode, year, month, day),
     [mode, year, month, day],
   );
-
   const income = useMemo(
     () => filtered.filter((t) => t.type === "income"),
     [filtered],
@@ -810,16 +983,28 @@ const Reports = ({
   );
   const net = totInc - totExp;
 
-  // Tax estimate using correct functions from taxCalculations.js
   const estTax = useMemo(() => {
     if (taxpayerType === "Business")
       return calculateBusinessTax(totInc, totExp, regime).totalTax;
     return calculateSalariedTax(totInc, 0, {}, regime).totalTax;
   }, [taxpayerType, regime, totInc, totExp]);
-
   const inHand = totInc - estTax;
 
-  // Chart slices
+  const saveReport = async (format) => {
+  try {
+    const token = localStorage.getItem("token");
+    await axios.post(`${API}/api/reports/save`, {
+      report_type: activeTab,
+      period: fileLabel,
+      format: format
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  } catch (err) {
+    console.error("Report save failed:", err);
+  }
+};
+
   const incSlices = useMemo(() => {
     const acc = {};
     income.forEach((t) => {
@@ -829,7 +1014,6 @@ const Reports = ({
       .map(([label, value]) => ({ label, value }))
       .sort((a, b) => b.value - a.value);
   }, [income]);
-
   const expSlices = useMemo(() => {
     const acc = {};
     expense.forEach((t) => {
@@ -840,7 +1024,6 @@ const Reports = ({
       .sort((a, b) => b.value - a.value);
   }, [expense]);
 
-  // Monthly grouped bar data
   const monthlyData = useMemo(() => {
     const byM = {};
     filtered.forEach((t) => {
@@ -853,7 +1036,6 @@ const Reports = ({
       .map(([m, d]) => ({ label: m, income: d.income, expense: d.expense }));
   }, [filtered]);
 
-  // Quarter tax data
   const quarterData = useMemo(
     () =>
       QUARTERS.map((q) => ({
@@ -865,18 +1047,16 @@ const Reports = ({
       })),
     [estTax],
   );
-
-  // Budget data
   const budgetData = useMemo(
     () =>
       budgets.map((b) => {
-        const name = b.name || b.category || "";
-        const alloc = Number(b.amount || b.limit || 0);
+        const name = b.name || b.category || "",
+          alloc = Number(b.amount || b.limit || 0);
         const spent = expense
           .filter((t) => t.category === name)
           .reduce((s, t) => s + t.amount, 0);
-        const rem = alloc - spent;
-        const pct = alloc > 0 ? Math.min(100, (spent / alloc) * 100) : 0;
+        const rem = alloc - spent,
+          pct = alloc > 0 ? Math.min(100, (spent / alloc) * 100) : 0;
         return { name, alloc, spent, rem, pct, over: spent > alloc };
       }),
     [budgets, expense],
@@ -887,28 +1067,11 @@ const Reports = ({
       bg: "bg-emerald-50",
       col: "text-emerald-600",
       border: "border-emerald-100",
-      bar: "#10b981",
     },
-    {
-      bg: "bg-blue-50",
-      col: "text-blue-600",
-      border: "border-blue-100",
-      bar: "#3b82f6",
-    },
-    {
-      bg: "bg-violet-50",
-      col: "text-violet-600",
-      border: "border-violet-100",
-      bar: "#8b5cf6",
-    },
-    {
-      bg: "bg-amber-50",
-      col: "text-amber-600",
-      border: "border-amber-100",
-      bar: "#f59e0b",
-    },
+    { bg: "bg-blue-50", col: "text-blue-600", border: "border-blue-100" },
+    { bg: "bg-violet-50", col: "text-violet-600", border: "border-violet-100" },
+    { bg: "bg-amber-50", col: "text-amber-600", border: "border-amber-100" },
   ];
-
   const TABS = [
     { id: "income", emoji: "💰", label: "Income" },
     { id: "expense", emoji: "💸", label: "Expense" },
@@ -925,9 +1088,7 @@ const Reports = ({
         userStatus={{ plan: "pro" }}
         onBudgetUpdate={() => {}}
       />
-
       <main className="flex-1 overflow-y-auto">
-        {/* HEADER */}
         <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-emerald-100 px-4 lg:px-10 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <button
@@ -948,7 +1109,7 @@ const Reports = ({
         </header>
 
         <div className="p-4 lg:p-8 max-w-[1180px] mx-auto space-y-5">
-          {/* ----- Summary Cards ----- */}
+          {/* Summary Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
               {
@@ -999,7 +1160,7 @@ const Reports = ({
             ))}
           </div>
 
-          {/* --- Tabs --- */}
+          {/* Tabs */}
           <div className="flex gap-2 flex-wrap">
             {TABS.map((t) => (
               <button
@@ -1014,7 +1175,7 @@ const Reports = ({
             ))}
           </div>
 
-          {/* --- Filter + Export Bar --- */}
+          {/* Filter + Export Bar */}
           <div className="bg-white rounded-2xl p-4 border border-gray-50 shadow-sm flex items-center justify-between flex-wrap gap-3">
             <FilterBar
               mode={mode}
@@ -1026,58 +1187,65 @@ const Reports = ({
               day={day}
               setDay={setDay}
             />
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1">
                 {badge}
               </span>
               <button
-                onClick={() =>
-                  doExport(
-                    activeTab,
-                    filtered,
-                    fileLabel,
-                    budgets,
-                    taxpayerType,
-                    regime,
-                  )
-                }
+                onClick={() => {
+  doExport(activeTab, filtered, fileLabel, budgets, taxpayerType, regime);
+  saveReport("CSV");
+}}
                 className="flex items-center gap-2 bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200 active:scale-95"
               >
-                ↓ Export CSV
+                ↓ CSV
+              </button>
+              <button
+                onClick={() => {
+  downloadPDF(activeTab, filtered, fileLabel, budgets, taxpayerType, regime);
+  saveReport("PDF");
+}}
+                className="flex items-center gap-2 bg-rose-500 text-white px-5 py-2.5 rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-rose-600 transition-all shadow-lg shadow-rose-200 active:scale-95"
+              >
+                ↓ PDF
               </button>
             </div>
           </div>
 
-          {/* =====================================
-              TAB: INCOME
-          ========================================= */}
+          {/* TAB: INCOME */}
           {activeTab === "income" && (
             <>
               <div className="grid grid-cols-3 gap-3 px-1">
-                <div className="min-w-0">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                    Total Income
-                  </p>
-                  <p className="text-lg sm:text-2xl font-black text-emerald-600 tracking-tighter truncate">
-                    +{formatCurrency(totInc)}
-                  </p>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                    Transactions
-                  </p>
-                  <p className="text-lg sm:text-2xl font-black text-gray-900">
-                    {income.length}
-                  </p>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                    Avg per Txn
-                  </p>
-                  <p className="text-lg sm:text-2xl font-black text-gray-900 truncate">
-                    {formatCurrency(income.length ? totInc / income.length : 0)}
-                  </p>
-                </div>
+                {[
+                  {
+                    label: "Total Income",
+                    val: `+${formatCurrency(totInc)}`,
+                    col: "text-emerald-600",
+                  },
+                  {
+                    label: "Transactions",
+                    val: income.length,
+                    col: "text-gray-900",
+                  },
+                  {
+                    label: "Avg per Txn",
+                    val: formatCurrency(
+                      income.length ? totInc / income.length : 0,
+                    ),
+                    col: "text-gray-900",
+                  },
+                ].map((c) => (
+                  <div key={c.label} className="min-w-0">
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                      {c.label}
+                    </p>
+                    <p
+                      className={`text-lg sm:text-2xl font-black ${c.col} tracking-tighter truncate`}
+                    >
+                      {c.val}
+                    </p>
+                  </div>
+                ))}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card title="Income by Category — Donut">
@@ -1097,38 +1265,40 @@ const Reports = ({
             </>
           )}
 
-          {/* ========================================
-              TAB: EXPENSE
-          ======================================== */}
+          {/* TAB: EXPENSE */}
           {activeTab === "expense" && (
             <>
               <div className="grid grid-cols-3 gap-3 px-1">
-                <div className="min-w-0">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                    Total Expenses
-                  </p>
-                  <p className="text-lg sm:text-2xl font-black text-rose-500 tracking-tighter truncate">
-                    −{formatCurrency(totExp)}
-                  </p>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                    Transactions
-                  </p>
-                  <p className="text-lg sm:text-2xl font-black text-gray-900">
-                    {expense.length}
-                  </p>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                    Avg per Txn
-                  </p>
-                  <p className="text-lg sm:text-2xl font-black text-gray-900 truncate">
-                    {formatCurrency(
+                {[
+                  {
+                    label: "Total Expenses",
+                    val: `−${formatCurrency(totExp)}`,
+                    col: "text-rose-500",
+                  },
+                  {
+                    label: "Transactions",
+                    val: expense.length,
+                    col: "text-gray-900",
+                  },
+                  {
+                    label: "Avg per Txn",
+                    val: formatCurrency(
                       expense.length ? totExp / expense.length : 0,
-                    )}
-                  </p>
-                </div>
+                    ),
+                    col: "text-gray-900",
+                  },
+                ].map((c) => (
+                  <div key={c.label} className="min-w-0">
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                      {c.label}
+                    </p>
+                    <p
+                      className={`text-lg sm:text-2xl font-black ${c.col} tracking-tighter truncate`}
+                    >
+                      {c.val}
+                    </p>
+                  </div>
+                ))}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card title="Expense by Category — Donut">
@@ -1160,9 +1330,7 @@ const Reports = ({
             </>
           )}
 
-          {/* ==================================
-              TAB: INCOME vs EXPENSE
-          ===================================== */}
+          {/* TAB: vs */}
           {activeTab === "vs" && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1223,9 +1391,8 @@ const Reports = ({
                     </p>
                   )}
                   {[...monthlyData].reverse().map((d, idx) => {
-                    const n = d.income - d.expense;
-                    const ratio =
-                      d.income > 0 ? (d.expense / d.income) * 100 : 100;
+                    const n = d.income - d.expense,
+                      ratio = d.income > 0 ? (d.expense / d.income) * 100 : 100;
                     return (
                       <div key={idx} className="py-4">
                         <div className="flex justify-between items-start mb-2">
@@ -1273,9 +1440,7 @@ const Reports = ({
             </>
           )}
 
-          {/* ========================================
-              TAB: BUDGET
-          ======================================== */}
+          {/* TAB: BUDGET */}
           {activeTab === "budget" && (
             <>
               {budgetData.length === 0 ? (
@@ -1290,7 +1455,6 @@ const Reports = ({
                 </div>
               ) : (
                 <>
-                  {/* Overview cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {(() => {
                       const totalAlloc = budgetData.reduce(
@@ -1342,8 +1506,6 @@ const Reports = ({
                       ));
                     })()}
                   </div>
-
-                  {/* Budget bar chart */}
                   <Card title="Allocated vs Spent — Bar Chart">
                     <div className="px-6 pb-5">
                       <BarChartSVG
@@ -1360,8 +1522,6 @@ const Reports = ({
                       </p>
                     </div>
                   </Card>
-
-                  {/* Budget rows */}
                   <Card title="Budget Category Details">
                     <div className="divide-y divide-gray-50">
                       {budgetData.map((b, i) => (
@@ -1416,9 +1576,7 @@ const Reports = ({
             </>
           )}
 
-          {/* ========================================
-              TAB: TAX REPORT
-          ======================================== */}
+          {/* TAB: TAX */}
           {activeTab === "tax" && (
             <>
               <div className="flex items-center gap-4 flex-wrap">
@@ -1430,8 +1588,7 @@ const Reports = ({
                     <button
                       key={tp}
                       onClick={() => setTaxpayerType(tp)}
-                      className={`px-4 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all
-                      ${taxpayerType === tp ? "bg-gray-950 text-white shadow-md" : "bg-gray-100 text-gray-400 hover:bg-gray-200"}`}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all ${taxpayerType === tp ? "bg-gray-950 text-white shadow-md" : "bg-gray-100 text-gray-400 hover:bg-gray-200"}`}
                     >
                       {tp === "Business" ? "🏢" : "👔"} {tp}
                     </button>
@@ -1448,15 +1605,13 @@ const Reports = ({
                     <button
                       key={r.id}
                       onClick={() => setRegime(r.id)}
-                      className={`px-4 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all
-                      ${regime === r.id ? "bg-emerald-600 text-white shadow-md" : "bg-gray-100 text-gray-400 hover:bg-gray-200"}`}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all ${regime === r.id ? "bg-emerald-600 text-white shadow-md" : "bg-gray-100 text-gray-400 hover:bg-gray-200"}`}
                     >
                       {r.label}
                     </button>
                   ))}
                 </div>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card title="Tax vs In-Hand — Donut">
                   <div className="px-6 pb-5">
@@ -1483,8 +1638,6 @@ const Reports = ({
                   </div>
                 </Card>
               </div>
-
-              {/* Quarter cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {quarterData.map((q, i) => (
                   <div
@@ -1513,8 +1666,6 @@ const Reports = ({
                   </div>
                 ))}
               </div>
-
-              {/* Tax Summary table */}
               <Card
                 title="Tax Summary"
                 sub={`Estimated for ${badge} · ${taxpayerType} · ${regime === "new" ? "New Regime" : "Old Regime"}`}
@@ -1589,10 +1740,9 @@ const Reports = ({
           </p>
         </div>
       </main>
-
       <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @media print { aside { display: none !important; } body { background: white !important; } }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        @media print { aside { display:none !important; } body { background:white !important; } }
       `}</style>
     </div>
   );
